@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ParserList_RV, ParseStatus_RV } from './endpoints';
 
 
 export const API = axios.create({
@@ -9,13 +10,13 @@ export const API = axios.create({
 
 export default {
     getParsers() {
-        return API.get("parser/list")
+        return API.get<ParserList_RV>("parser/list");
     }, 
     parserParseStart(data: any) {
-        return API.post("parser/start", data)
+        return API.post("parser/start", data);
     }, 
     parserParseStatus(data: any) {
-        return API.post("parser/status", data)
+        return API.post<ParseStatus_RV>("parser/status", data);
     }
 
 }

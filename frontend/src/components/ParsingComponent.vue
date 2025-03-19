@@ -5,6 +5,9 @@
         outlined
         label="Available models"
         v-model="parser"
+        option-label="label"
+        option-value="value"
+        emit-value
         :options="availableModels"
       >
       </q-select>
@@ -40,7 +43,6 @@
     </q-card-section>
     <q-card-section>
       <q-btn @click="startParsing">Parse</q-btn>
-
     </q-card-section>
   </q-card>
 </template>
@@ -59,12 +61,13 @@ export default defineComponent({
     const textToParse: string =  '';
     const parser: string = '';
     const taskTimeStarted: number = 0;
+    const availableModels: any[] = [];
     return {
       uploadedFiles,
       textToParse,
       parser,
       parsingOption: 'file',
-      availableModels: [],
+      availableModels,
       taskTimeStarted, 
       taskIntervalChecker: null as null | ReturnType<typeof setTimeout> | ReturnType<typeof setInterval>,
     }
@@ -75,7 +78,9 @@ export default defineComponent({
         .getParsers()
         .then((response) => {
           if (response.data.status === 'success'){
-            this.availableModels = response.data.models;
+            this.availableModels = response.data.data.map((model) => {
+              return { label: model.model_info.project_name, value: model};
+            });
           }
         })
         .catch((error) => {
