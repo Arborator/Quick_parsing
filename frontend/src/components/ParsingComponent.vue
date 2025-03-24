@@ -72,6 +72,9 @@ export default defineComponent({
       taskIntervalChecker: null as null | ReturnType<typeof setTimeout> | ReturnType<typeof setInterval>,
     }
   },
+  mounted() {
+    this.getModels();
+  },
   methods: {
     getModels() {
       api
