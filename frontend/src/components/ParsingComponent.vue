@@ -3,12 +3,14 @@
     <q-card-section>
       <q-select
         outlined
+        use-input
         label="Available models"
         v-model="parser"
         option-label="label"
         option-value="value"
-        emit-value
-        :options="availableModels"
+        emit-label
+        :options="filteredModels"
+        @filter="filterModels"
       >
       </q-select>
     </q-card-section>
@@ -62,12 +64,14 @@ export default defineComponent({
     const parser: string = '';
     const taskTimeStarted: number = 0;
     const availableModels: any[] = [];
+    const filteredModels: any[] = [];
     return {
       uploadedFiles,
       textToParse,
       parser,
       parsingOption: 'file',
       availableModels,
+      filteredModels,
       taskTimeStarted, 
       taskIntervalChecker: null as null | ReturnType<typeof setTimeout> | ReturnType<typeof setInterval>,
     }
@@ -90,6 +94,18 @@ export default defineComponent({
           notifyError(error.response.data.message, 10000);
         })
     }, 
+    filterModels(val: string, update: (callback: () => void) => void) {
+      if (val === '') {
+        update(() => {
+          this.filteredModels = this.availableModels;
+        });
+        return;
+      }
+      update(() => {
+        const needle = val.toLowerCase();
+        this.filteredModels = this.availableModels.filter((v) => v.label.toLowerCase().indexOf(needle) > -1);
+      });
+    },
     startParsing() {
       const form = new FormData()
       for (const file in this.uploadedFiles) {
