@@ -43,8 +43,7 @@ export default defineConfig((ctx) => {
         }
       : {
           // and on build (production):
-          // API: JSON.stringify("https://arboratorgrew.elizia.net:8888"),
-          API: 'https://arborator.grew.fr',
+          API: 'https://parser.grew.fr',
         },
 
       target: {
