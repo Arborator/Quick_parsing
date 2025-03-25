@@ -22,7 +22,7 @@ class ParserModelsListResource(Resource):
 
         else:
             models = response.get("data")
-            return { "status": "success", "models": models }
+            return { "status": "success", "data": models }
         
 
 @api.route("/start")
