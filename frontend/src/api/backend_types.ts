@@ -43,3 +43,13 @@ interface ScoresOneEpoch_t {
 export type ScoresBest_t = ScoresOneEpoch_t;
 
 export type ScoresHistory_t = ScoresOneEpoch_t[];
+
+
+export interface ParsingSettings_t {
+    keep_heads: 'NONE' | 'EXISTING';
+    keep_upos: 'NONE' | 'EXISTING';
+    keep_feats: 'NONE' | 'EXISTING';
+    keep_xpos: 'NONE' | 'EXISTING';
+    keep_deprels: 'NONE' | 'EXISTING';
+    keep_lemmas: 'NONE' | 'EXISTING';
+  }

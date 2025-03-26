@@ -55,16 +55,19 @@ class TextToParseService:
         conll_string = ''
 
         for id_sent, sentence in enumerate(text.sents):
+            sentence_text = sentence.text if '\n' not in sentence.text else sentence.text.replace("\n", "")
+
             index = 1
-            conll_string += f"# sent_id = {id_sent}\n# text = {sentence.text}\n"
+            conll_string += f"# sent_id = {id_sent}\n# text = {sentence_text}\n"
             for token in sentence:
-                conll_string += f"{index}\t{token}\t_\t_\t_\t_\t_\t_\t_\t_\t\n"
-                index += 1
+                token_form = token.text.strip()  
+                if token_form: 
+                    conll_string += f"{index}\t{token_form}\t_\t_\t_\t_\t_\t_\t_\t_\t\n"
+                    index += 1
 
             conll_string += '\n'
 
         return conll_string
-    
 
 
 

@@ -1,7 +1,8 @@
 <template>
   <q-card flat>
-    <q-card-section>
+    <q-card-section class="row q-pa-md">
       <q-select
+        class="col"
         outlined
         use-input
         label="Available models"
@@ -11,6 +12,16 @@
         emit-label
         :options="filteredModels"
         @filter="filterModels"
+      >
+      </q-select>
+      <q-select
+        class="col"
+        label="Select columns to keep"
+        v-model="columnsToKeep"
+        outlined
+        use-chips
+        multiple
+        :options="conllColumns"
       >
       </q-select>
     </q-card-section>
@@ -49,8 +60,12 @@
   </q-card>
 </template>
 <script lang="ts">
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+
 import api from 'src/api/backend-api';
 import { notifyError, notifyMessage } from 'src/utils/notify';
+import { ParsingSettings_t } from 'src/api/backend_types';
 import { defineComponent } from 'vue';
 
 const TIMEOUT_TASK_STATUS_CHECKER = 1000 * 60 * 60 * 3; // 3 hours
@@ -61,10 +76,12 @@ export default defineComponent({
   data() {
     const uploadedFiles: File[] = [];
     const textToParse: string =  '';
-    const parser: string = '';
+    const parser: any = null;
     const taskTimeStarted: number = 0;
     const availableModels: any[] = [];
     const filteredModels: any[] = [];
+    const columnsToKeep: string[] = [];
+    const conllColumns: string[] = ['LEMMA', 'UPOS', 'XPOS', 'FEATS', 'HEAD', 'DEPREL'];
     return {
       uploadedFiles,
       textToParse,
@@ -72,7 +89,11 @@ export default defineComponent({
       parsingOption: 'file',
       availableModels,
       filteredModels,
+      columnsToKeep,
+      conllColumns,
       taskTimeStarted, 
+      parsedSamples: {},
+      showResults: false,
       taskIntervalChecker: null as null | ReturnType<typeof setTimeout> | ReturnType<typeof setInterval>,
     }
   },
@@ -107,12 +128,24 @@ export default defineComponent({
       });
     },
     startParsing() {
-      const form = new FormData()
-      for (const file in this.uploadedFiles) {
-        form.append('files', file)
+      const parsingSettings: ParsingSettings_t = {
+        keep_heads: this.columnsToKeep.includes('HEAD') ? 'EXISTING' : 'NONE',
+        keep_upos: this.columnsToKeep.includes('UPOS') ? 'EXISTING' : 'NONE',
+        keep_feats: this.columnsToKeep.includes('FEATS') ? 'EXISTING' : 'NONE',
+        keep_xpos: this.columnsToKeep.includes('XPOS') ? 'EXISTING' : 'NONE',
+        keep_deprels: this.columnsToKeep.includes('DEPREL') ? 'EXISTING' : 'NONE',
+        keep_lemmas: this.columnsToKeep.includes('LEMMA') ? 'EXISTING' : 'NONE',
+
       }
-      form.append('text_to_parse', this.textToParse)
-      form.append('model', this.parser)
+      const form = new FormData();
+
+      for (const file of this.uploadedFiles) {
+        form.append('files', file);
+      }
+
+      form.append('text_to_parse', this.textToParse);
+      form.append('model', JSON.stringify(this.parser.value));
+      form.append('parsingSettings', JSON.stringify(parsingSettings));
 
       this.taskTimeStarted = Date.now();
 
@@ -141,7 +174,11 @@ export default defineComponent({
           if (response.data.status === 'failure') {
             notifyError(response.data.error, 10000);
           } else if (response.data.data.ready) {
-            notifyMessage('Sentences parsing ended!', 0);
+            this.clearCurrentTask();
+            this.parsedSamples = response.data.data.parsed_samples;
+            this.showResults = true;
+            this.downloadZip();
+            notifyMessage('Sentences parsing ended!', 0);  
           }
           else if (Date.now() - this.taskTimeStarted > TIMEOUT_TASK_STATUS_CHECKER) {
             this.clearCurrentTask();
@@ -153,7 +190,7 @@ export default defineComponent({
           }
         })
         .catch((error) => {
-          console.log(error);
+          notifyError(error, 10000);
           this.clearCurrentTask();
         });
     },
@@ -161,6 +198,16 @@ export default defineComponent({
       if (this.taskIntervalChecker !== null) {
         clearInterval(this.taskIntervalChecker);
       }
+    }, 
+    async downloadZip() {
+      const zip = new JSZip();
+
+      for (const [fileName, content] of Object.entries(this.parsedSamples)) {
+        zip.file(`${fileName}.conllu`, content as string);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      saveAs(zipBlob, "parsed_files.zip");
     }
   }
 

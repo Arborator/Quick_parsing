@@ -1,4 +1,5 @@
 import io 
+import json
 import zipfile
 
 from flask_restx import Namespace, Resource
@@ -15,7 +16,6 @@ class ParserModelsListResource(Resource):
     def get(self):
 
         response = ParserService.send_get_request('/list')
-
         if response['status'] == 'failure':
             error_message = f"Sorry the parser is unreachable, please contact the admins, {response['error']}"
             abort(503, error_message)
@@ -29,10 +29,13 @@ class ParserModelsListResource(Resource):
 class ParserParseStartResource(Resource):
 
     def post(self):
-        
+
+      
         text_to_parse = request.form.get('text_to_parse')
         files = request.files.to_dict(flat=False).get("files")
-        model = request.form.get('model')
+    
+        model = json.loads(request.form.get('model'))
+        parsing_settings = json.loads(request.form.get('parsingSettings'))
 
         files_to_parse = {}
         
@@ -43,14 +46,16 @@ class ParserParseStartResource(Resource):
 
         if files: 
             for file in files:
-                files_to_parse[file.filename] = file.read()
-
+                file_name = file.filename.split(".conllu")[0]
+                files_to_parse[file_name] = file.read().decode()
+       
         data = {
-            "model_info": model,
-            "to_parse_samples": files_to_parse
+            "model_info": model["model_info"],
+            "to_parse_samples": files_to_parse,
+            "parsing_settings": parsing_settings
         }
 
-        #return ParserService.send_post_request("/parse/start", data)
+        return ParserService.send_post_request("/parse/start", data)
     
 
 @api.route("/status")
@@ -62,52 +67,15 @@ class ParserParseStatusResource(Resource):
         parse_task_id = params["task_id"]
 
         data = { "parse_task_id": parse_task_id }
-        parsing_status = ParserService.send_post_request("parser/status", data)
+        parsing_status = ParserService.send_post_request("/parse/status", data)
 
         if parsing_status["status"] == "failure":
 
             return parsing_status
         
         data = parsing_status["data"]
-        if data.get("ready") and data.get("parsed_samples"):
-
-            task_parsed_samples = data["parsed_samples"]
-            zip_buffer = io.BytesIO()
-
-            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         
-                for file_name, file_content in task_parsed_samples.items():
-                    zip_file.writestr(f"{file_name}.conllu", file_content)
-
-            zip_buffer.seek(0)
-
-        return send_file(
-            zip_buffer,
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='files.zip'
-        )
-
-
-
-
-
-
-
-        
-
-
-        
-        
-
-
-
-            
-
-
-
-
-
+        return  { "status": "success", "data": data }
 
 
         

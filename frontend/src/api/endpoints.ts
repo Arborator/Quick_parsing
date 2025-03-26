@@ -35,8 +35,10 @@ interface ParseStatus_t {
       }
       |
       {
-          ready: true;
-          model_info: ModelInfo_t;
+        ready: true;
+        model_info: ModelInfo_t;
+        parsed_samples: {};
+
       }   
 }
 
