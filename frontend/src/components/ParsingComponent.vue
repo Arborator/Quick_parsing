@@ -1,29 +1,34 @@
 <template>
   <q-card flat>
-    <q-card-section class="row q-pa-md">
-      <q-select
-        class="col"
-        outlined
-        use-input
-        label="Available models"
-        v-model="parser"
-        option-label="label"
-        option-value="value"
-        emit-label
-        :options="filteredModels"
-        @filter="filterModels"
-      >
-      </q-select>
-      <q-select
-        class="col"
-        label="Select columns to keep"
-        v-model="columnsToKeep"
-        outlined
-        use-chips
-        multiple
-        :options="conllColumns"
-      >
-      </q-select>
+    <q-card-section class="row q-gutter-md">
+      <div class="col">
+        <q-select
+          class="col"
+          outlined
+          use-input
+          label="Available models"
+          v-model="parser"
+          option-label="label"
+          option-value="value"
+          emit-label
+          :options="filteredModels"
+          @filter="filterModels"
+        >
+        </q-select>
+      </div>
+      <div class="col">
+        <q-select
+          v-if="parsingOption !== 'text'"
+          class="col"
+          label="Select columns to keep"
+          v-model="columnsToKeep"
+          outlined
+          use-chips
+          multiple
+          :options="conllColumns"
+        >
+        </q-select>
+      </div>
     </q-card-section>
     <q-card-section>
       <q-tabs v-model="parsingOption" dense active-color="primary">
@@ -55,7 +60,24 @@
       </q-tab-panels>
     </q-card-section>
     <q-card-section>
-      <q-btn @click="startParsing">Parse</q-btn>
+      <q-btn no-caps :disable="disableParseBtn" color="primary" label="Parse" @click="startParsing" />
+    </q-card-section>
+    <q-card-section v-if="showResults">
+      <q-card flat>
+        <q-card-section class="row">
+          <q-btn label="Download output" @click="downloadZip()" />
+          <q-select
+            v-model="parsedSample"
+            outlined
+            label="Select a sample"
+            :options="Object.keys(parsedSamples)"
+          >
+          </q-select>
+        </q-card-section>
+        <q-card-section>
+          <pre>{{ parsedSamples[parsedSample] }}</pre>
+        </q-card-section>
+      </q-card>
     </q-card-section>
   </q-card>
 </template>
@@ -82,6 +104,7 @@ export default defineComponent({
     const filteredModels: any[] = [];
     const columnsToKeep: string[] = [];
     const conllColumns: string[] = ['LEMMA', 'UPOS', 'XPOS', 'FEATS', 'HEAD', 'DEPREL'];
+    const parsedSamples: { [key: string]: string } = {};
     return {
       uploadedFiles,
       textToParse,
@@ -92,9 +115,15 @@ export default defineComponent({
       columnsToKeep,
       conllColumns,
       taskTimeStarted, 
-      parsedSamples: {},
+      parsedSamples,
+      parsedSample: '',
       showResults: false,
       taskIntervalChecker: null as null | ReturnType<typeof setTimeout> | ReturnType<typeof setInterval>,
+    }
+  },
+  computed: {
+    disableParseBtn() {
+      return this.parser === null || this.uploadedFiles.length === 0 || this.textToParse === "";
     }
   },
   mounted() {
@@ -105,7 +134,7 @@ export default defineComponent({
       api
         .getParsers()
         .then((response) => {
-          if (response.data.status === 'success'){
+          if (response.data.status === 'success') {
             this.availableModels = response.data.data.map((model) => {
               return { label: model.model_info.project_name, value: model};
             });
@@ -176,8 +205,8 @@ export default defineComponent({
           } else if (response.data.data.ready) {
             this.clearCurrentTask();
             this.parsedSamples = response.data.data.parsed_samples;
+            this.parsedSample = Object.keys(this.parsedSamples)[0] as string;
             this.showResults = true;
-            this.downloadZip();
             notifyMessage('Sentences parsing ended!', 0);  
           }
           else if (Date.now() - this.taskTimeStarted > TIMEOUT_TASK_STATUS_CHECKER) {
