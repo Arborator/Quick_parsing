@@ -45,6 +45,7 @@
             outlined
             multiple
             input-style="height:100px"
+            @update:model-value="checkExtension"
           >
           </q-file>
         </q-tab-panel>
@@ -63,10 +64,11 @@
       <q-btn no-caps :disable="disableParseBtn" color="primary" label="Parse" @click="startParsing" />
     </q-card-section>
     <q-card-section v-if="showResults">
-      <q-card flat>
-        <q-card-section class="row">
-          <q-btn label="Download output" @click="downloadZip()" />
+      <q-card flat bordered>
+        <q-card-section class="row q-gutter-md">
+          <q-btn class="col" label="Download output" @click="downloadZip()" />
           <q-select
+            class="col"
             v-model="parsedSample"
             outlined
             label="Select a sample"
@@ -75,7 +77,21 @@
           </q-select>
         </q-card-section>
         <q-card-section>
-          <pre>{{ parsedSamples[parsedSample] }}</pre>
+
+          <q-tabs v-model="resultViewOption" dense active-color="primary">
+            <q-tab name="conll" label="Conll view"></q-tab>
+            <q-tab name="tree" label="Tree view"></q-tab>
+          </q-tabs>
+          
+          <q-tab-panels v-model="resultViewOption">
+            <q-tab-panel name="conll">
+              <pre>{{ parsedSamples[parsedSample] }}</pre>
+            </q-tab-panel>
+            <q-tab-panel name="tree">
+
+            </q-tab-panel>
+          </q-tab-panels>
+
         </q-card-section>
       </q-card>
     </q-card-section>
@@ -86,7 +102,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
 import api from 'src/api/backend-api';
-import { notifyError, notifyMessage } from 'src/utils/notify';
+import { notifyMessage } from 'src/utils/notify';
 import { ParsingSettings_t } from 'src/api/backend_types';
 import { defineComponent } from 'vue';
 
@@ -110,6 +126,7 @@ export default defineComponent({
       textToParse,
       parser,
       parsingOption: 'file',
+      resultViewOption: 'conll',
       availableModels,
       filteredModels,
       columnsToKeep,
@@ -118,18 +135,31 @@ export default defineComponent({
       parsedSamples,
       parsedSample: '',
       showResults: false,
+      disableUpload: false,
       taskIntervalChecker: null as null | ReturnType<typeof setTimeout> | ReturnType<typeof setInterval>,
     }
   },
   computed: {
     disableParseBtn() {
-      return this.parser === null || this.uploadedFiles.length === 0 || this.textToParse === "";
+      return (this.parser === null || this.uploadedFiles.length === 0 || this.disableUpload) && (this.textToParse === "" || this.parser === null);
     }
   },
   mounted() {
     this.getModels();
   },
   methods: {
+    async checkExtension() {
+      const extension = /^.*\.(conllu)$/;
+      this.disableUpload = false;
+
+      for (const file of this.uploadedFiles) {
+        if (!extension.test(file.name)) {
+          notifyMessage(`You have to upload Conll file`, 5000, 'warning');
+          this.disableUpload = true;
+          return 
+        }
+      }
+    },
     getModels() {
       api
         .getParsers()
@@ -141,7 +171,7 @@ export default defineComponent({
           }
         })
         .catch((error) => {
-          notifyError(error.response.data.message, 10000);
+          notifyMessage(error.response.data.message, 10000, 'negative');
         })
     }, 
     filterModels(val: string, update: (callback: () => void) => void) {
@@ -182,9 +212,9 @@ export default defineComponent({
         .parserParseStart(form)
         .then((response) => {
           if (response.data.status === 'failure') {
-            notifyError('Parsing could not start : ' + response.data.error , 10000);
+            notifyMessage('Parsing could not start : ' + response.data.error , 10000, 'negative');
           } else {
-            notifyMessage('Sentences parsing started', 10000);
+            notifyMessage('Sentences parsing started', 10000, 'positive');
             const parseTaskId = response.data.data.parse_task_id;
             this.taskIntervalChecker = setInterval(() => {
               setTimeout(this.checkParserStatus(parseTaskId) as any, 10);
@@ -192,7 +222,7 @@ export default defineComponent({
           }
         })
         .catch((error) => {
-          notifyError(error, 10000);
+          notifyMessage(error, 10000, 'negative');
         });
     },
     checkParserStatus(taskId: string) {
@@ -201,13 +231,13 @@ export default defineComponent({
         .parserParseStatus(data)
         .then((response) => {
           if (response.data.status === 'failure') {
-            notifyError(response.data.error, 10000);
+            notifyMessage(response.data.error, 10000, 'negative');
           } else if (response.data.data.ready) {
             this.clearCurrentTask();
             this.parsedSamples = response.data.data.parsed_samples;
             this.parsedSample = Object.keys(this.parsedSamples)[0] as string;
             this.showResults = true;
-            notifyMessage('Sentences parsing ended!', 0);  
+            notifyMessage('Sentences parsing ended!', 0, 'positive');  
           }
           else if (Date.now() - this.taskTimeStarted > TIMEOUT_TASK_STATUS_CHECKER) {
             this.clearCurrentTask();
@@ -219,7 +249,7 @@ export default defineComponent({
           }
         })
         .catch((error) => {
-          notifyError(error, 10000);
+          notifyMessage(error, 10000, 'negative');
           this.clearCurrentTask();
         });
     },
