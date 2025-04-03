@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered class="scrollable">
+  <q-card v-if="sentenceConll !==  ''" flat bordered class="scrollable">
     <q-card-section>
       <q-chip class="text-center" color="grey" dense>{{ sentId }}</q-chip>
       {{ sentenceText }}
@@ -41,6 +41,8 @@ export default defineComponent({
   }, 
   created() {
     this.reactiveSentence = new ReactiveSentence();
+  },
+  mounted() {
     this.sentenceText = this.reactiveSentence.getSentenceText();
     this.sentId = this.reactiveSentence.state.metaJson['sent_id'] as string;
   },

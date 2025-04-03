@@ -3,7 +3,7 @@
     <div class="q-pa-md">
       <q-card flat>
         <q-card-section>
-          <ParsingComponent @get-parsing="getParsedSample"></ParsingComponent>
+          <ParsingComponent @get-parsing="getParsedSamples"></ParsingComponent>
         </q-card-section>
         <q-card-section v-if="Object.keys(parsedSamples).length > 0">
           <ResultView :parsedSamples="parsedSamples"></ResultView>
@@ -35,7 +35,7 @@ export default defineComponent({
     };  
   },
   methods: {
-    getParsedSample(value: any) {
+    getParsedSamples(value: any) {
       this.parsedSamples = value;
     }
   }

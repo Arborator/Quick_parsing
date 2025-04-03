@@ -1,9 +1,8 @@
 <template>
   <q-card flat bordered>
     <q-card-section class="row q-gutter-md">
-      <q-btn class="col" color="primary" label="Download output" @click="downloadZip()" @update:model-value="getTrees" />
-      <q-select class="col" v-model="parsedSample" outlined label="Select a sample" :options="Object.keys(parsedSamples)" >
-      </q-select>
+      <q-btn class="col" color="primary" label="Download output" @click="downloadZip()" />
+      <q-select class="col" v-model="parsedSample" outlined label="Select a sample" :options="Object.keys(parsedSamples)" @update:model-value="getTrees" />
     </q-card-section>
     <q-card-section>
 
@@ -78,8 +77,6 @@ export default defineComponent({
       saveAs(zipBlob, "parsed_files.zip");
     }
   }
-
-
 });
 
 
