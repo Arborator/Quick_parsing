@@ -2,7 +2,12 @@
   <q-page>
     <div class="q-pa-md">
       <q-card flat>
-        <ParsingComponent></ParsingComponent>
+        <q-card-section>
+          <ParsingComponent @get-parsing="getParsedSample"></ParsingComponent>
+        </q-card-section>
+        <q-card-section v-if="Object.keys(parsedSamples).length > 0">
+          <ResultView :parsedSamples="parsedSamples"></ResultView>
+        </q-card-section>
       </q-card>
     </div>
     <q-footer>
@@ -12,17 +17,27 @@
     </q-footer>
   </q-page>
 </template>
-<script>
+<script lang="ts">
 import ParsingComponent from 'src/components/ParsingComponent.vue';
+import ResultView from 'src/components/ResultView.vue';
 import { defineComponent } from 'vue';
 
 export default defineComponent({
   name: 'IndexPage',
   components: {
-    ParsingComponent
+    ParsingComponent, 
+    ResultView
   },
-
-})
-
-
+  data() {
+    const parsedSamples: { [key: string]: string } = {};
+    return {
+      parsedSamples,
+    };  
+  },
+  methods: {
+    getParsedSample(value: any) {
+      this.parsedSamples = value;
+    }
+  }
+});
 </script>

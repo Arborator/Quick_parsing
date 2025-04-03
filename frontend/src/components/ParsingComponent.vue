@@ -63,44 +63,9 @@
     <q-card-section>
       <q-btn no-caps :disable="disableParseBtn" color="primary" label="Parse" @click="startParsing" />
     </q-card-section>
-    <q-card-section v-if="showResults">
-      <q-card flat bordered>
-        <q-card-section class="row q-gutter-md">
-          <q-btn class="col" label="Download output" @click="downloadZip()" />
-          <q-select
-            class="col"
-            v-model="parsedSample"
-            outlined
-            label="Select a sample"
-            :options="Object.keys(parsedSamples)"
-          >
-          </q-select>
-        </q-card-section>
-        <q-card-section>
-
-          <q-tabs v-model="resultViewOption" dense active-color="primary">
-            <q-tab name="conll" label="Conll view"></q-tab>
-            <q-tab name="tree" label="Tree view"></q-tab>
-          </q-tabs>
-          
-          <q-tab-panels v-model="resultViewOption">
-            <q-tab-panel name="conll">
-              <pre>{{ parsedSamples[parsedSample] }}</pre>
-            </q-tab-panel>
-            <q-tab-panel name="tree">
-
-            </q-tab-panel>
-          </q-tab-panels>
-
-        </q-card-section>
-      </q-card>
-    </q-card-section>
   </q-card>
 </template>
 <script lang="ts">
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
-
 import api from 'src/api/backend-api';
 import { notifyMessage } from 'src/utils/notify';
 import { ParsingSettings_t } from 'src/api/backend_types';
@@ -133,8 +98,6 @@ export default defineComponent({
       conllColumns,
       taskTimeStarted, 
       parsedSamples,
-      parsedSample: '',
-      showResults: false,
       disableUpload: false,
       taskIntervalChecker: null as null | ReturnType<typeof setTimeout> | ReturnType<typeof setInterval>,
     }
@@ -151,7 +114,6 @@ export default defineComponent({
     async checkExtension() {
       const extension = /^.*\.(conllu)$/;
       this.disableUpload = false;
-
       for (const file of this.uploadedFiles) {
         if (!extension.test(file.name)) {
           notifyMessage(`You have to upload Conll file`, 5000, 'warning');
@@ -235,8 +197,7 @@ export default defineComponent({
           } else if (response.data.data.ready) {
             this.clearCurrentTask();
             this.parsedSamples = response.data.data.parsed_samples;
-            this.parsedSample = Object.keys(this.parsedSamples)[0] as string;
-            this.showResults = true;
+            this.$emit('get-parsing', this.parsedSamples);
             notifyMessage('Sentences parsing ended!', 0, 'positive');  
           }
           else if (Date.now() - this.taskTimeStarted > TIMEOUT_TASK_STATUS_CHECKER) {
@@ -258,16 +219,7 @@ export default defineComponent({
         clearInterval(this.taskIntervalChecker);
       }
     }, 
-    async downloadZip() {
-      const zip = new JSZip();
-
-      for (const [fileName, content] of Object.entries(this.parsedSamples)) {
-        zip.file(`${fileName}.conllu`, content as string);
-      }
-
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      saveAs(zipBlob, "parsed_files.zip");
-    }
+    
   }
 
 });
