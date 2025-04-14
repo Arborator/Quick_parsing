@@ -1,5 +1,5 @@
 <template>
-  <q-card v-if="sentenceConll !==  ''" flat bordered class="scrollable">
+  <q-card v-if="sentenceConll !==  ''" flat bordered class="scrollable q-pa-md">
     <q-card-section>
       <q-chip class="text-center" color="grey" dense>{{ sentId }}</q-chip>
       {{ sentenceText }}

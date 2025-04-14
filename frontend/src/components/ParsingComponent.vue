@@ -1,37 +1,69 @@
 <template>
   <q-card flat>
-    <q-card-section class="row q-gutter-md">
-      <div class="col">
-        <q-select
-          class="col"
-          outlined
-          use-input
-          label="Available models"
-          v-model="parser"
-          option-label="label"
-          option-value="value"
-          emit-label
-          :options="filteredModels"
-          @filter="filterModels"
-        >
-        </q-select>
-      </div>
-      <div class="col">
-        <q-select
-          v-if="parsingOption !== 'text'"
-          class="col"
-          label="Select columns to keep"
-          v-model="columnsToKeep"
-          outlined
-          use-chips
-          multiple
-          :options="conllColumns"
-        >
-        </q-select>
+    <q-separator />
+
+    <q-card-section>
+      <div class="text-h4 text-center text-primary text-bold">
+        Parsing Settings
       </div>
     </q-card-section>
+
+    <q-card-section class="row q-gutter-md">
+      <q-select
+        class="col"
+        outlined
+        use-input
+        hide-dropdown-icon
+        label="Search Parser"
+        v-model="parser"
+        option-label="label"
+        option-value="value"
+        :options="filteredModels"
+        @filter="filterModels"
+      >
+        <template v-slot:selected-item="scope">
+          <q-chip
+            removable
+            @remove="scope.removeAtIndex(scope.index)"
+            :tabindex="scope.tabindex"
+            dense
+            text-color="primary"
+          >
+            {{ scope.opt.label }}
+          </q-chip>
+        </template>
+        <template v-slot:option="scope">
+          <q-item v-close-popup v-bind="scope.itemProps">
+            <q-item-section>
+              <q-item-label>{{ scope.opt.label }}</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-item-label>Best LAS</q-item-label>
+              <q-item-label caption>{{ scope.opt.value.scores_best.LAS_epoch.toFixed(3) }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </template>
+      </q-select>
+    </q-card-section>
+
     <q-card-section>
-      <q-tabs v-model="parsingOption" dense active-color="primary">
+      <q-select
+        v-if="parsingOption !== 'text'"
+        class="col"
+        label="Select CONLL columns to keep while parsing"
+        v-model="columnsToKeep"
+        outlined
+        use-chips
+        multiple
+        :options="conllColumns"
+      >
+      </q-select>
+    </q-card-section>
+
+    <q-separator />
+
+    <q-card-section>
+      <q-tabs v-model="parsingOption" class="bg-primary text-white">
         <q-tab name="file" label="File input"></q-tab>
         <q-tab name="text" label="Text input"></q-tab>
       </q-tabs>
@@ -60,9 +92,13 @@
         </q-tab-panel>
       </q-tab-panels>
     </q-card-section>
+
     <q-card-section>
-      <q-btn no-caps :disable="disableParseBtn" color="primary" label="Parse" @click="startParsing" />
+      <q-btn outline class="full-width" no-caps :disable="disableParseBtn" color="secondary" label="Parse the input" @click="startParsing" />
     </q-card-section>
+
+    <q-separator />
+
   </q-card>
 </template>
 <script lang="ts">
@@ -105,7 +141,7 @@ export default defineComponent({
   computed: {
     disableParseBtn() {
       return (this.parser === null || this.uploadedFiles.length === 0 || this.disableUpload) && (this.textToParse === "" || this.parser === null);
-    }
+    },
   },
   mounted() {
     this.getModels();
@@ -135,7 +171,7 @@ export default defineComponent({
         .catch((error) => {
           notifyMessage(error.response.data.message, 10000, 'negative');
         })
-    }, 
+    },
     filterModels(val: string, update: (callback: () => void) => void) {
       if (val === '') {
         update(() => {
@@ -194,6 +230,7 @@ export default defineComponent({
         .then((response) => {
           if (response.data.status === 'failure') {
             notifyMessage(response.data.error, 10000, 'negative');
+            this.clearCurrentTask();
           } else if (response.data.data.ready) {
             this.clearCurrentTask();
             this.parsedSamples = response.data.data.parsed_samples;

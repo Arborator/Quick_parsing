@@ -22,6 +22,7 @@ class ParserModelsListResource(Resource):
 
         else:
             models = response.get("data")
+            models = ParserService.get_best_models(models)
             return { "status": "success", "data": models }
         
 

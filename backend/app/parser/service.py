@@ -42,7 +42,21 @@ class ParserService:
         except Exception as e:
             error_message = f"<ArboratorParserAPI> unknown error when connecting `url={url}` : {str(e)}"
             return {"status": "failure", "error": error_message}
-            
+
+    @staticmethod
+    def get_best_models(available_models):
+        best_models_dict = {}
+
+        for model in available_models:
+            project_name = model["model_info"]["project_name"]
+            best_las = model["scores_best"]["LAS_epoch"]
+
+            if project_name not in best_models_dict or best_las > best_models_dict[project_name]["scores_best"]["LAS_epoch"]:
+                best_models_dict[project_name] = model
+
+        best_models = list(best_models_dict.values())
+        return best_models
+
 
 class TextToParseService:
 

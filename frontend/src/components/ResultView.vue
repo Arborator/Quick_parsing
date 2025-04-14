@@ -1,17 +1,23 @@
 <template>
   <q-card flat bordered>
+
+    <q-card-section>
+      <div class="text-h4 text-center text-primary text-bold">
+        Parsing Results
+      </div>
+    </q-card-section>
+
     <q-card-section class="row q-gutter-md">
-      <q-btn class="col" color="primary" label="Download output" @click="downloadZip()" />
+      <q-btn outline class="col" color="primary" label="Download output" @click="downloadZip()" />
       <q-select class="col" v-model="parsedSample" outlined label="Select a sample" :options="Object.keys(parsedSamples)" @update:model-value="getTrees" />
     </q-card-section>
-    <q-card-section>
 
-      <q-tabs v-model="resultViewOption" dense active-color="primary">
+    <q-card-section>
+      <q-tabs v-model="resultViewOption" class="bg-primary text-white">
         <q-tab name="conll" label="Conll view"></q-tab>
         <q-tab name="tree" label="Tree view"></q-tab>
       </q-tabs>
-
-      <q-tab-panels v-model="resultViewOption">
+      <q-tab-panels v-model="resultViewOption" class="background">
         <q-tab-panel name="conll">
           <pre>{{ parsedSamples[parsedSample] }}</pre>
         </q-tab-panel>
@@ -30,6 +36,7 @@
         </q-tab-panel>
       </q-tab-panels>
     </q-card-section>
+
   </q-card>
 
 </template>
@@ -62,9 +69,14 @@ export default defineComponent({
       conlls,
     };
   },
+  mounted() {
+    this.parsedSample = Object.keys(this.parsedSamples)[0] as string;
+    this.getTrees();
+  },
   methods: {
     getTrees() {
-      this.conlls = this.parsedSamples[this.parsedSample]?.split('\n\n') as string[];
+      const allTrees = this.parsedSamples[this.parsedSample]?.split('\n\n') as string[];
+      this.conlls = allTrees.length > 50 ? allTrees.slice(0, 50) : allTrees;
     },
     async downloadZip() {
       const zip = new JSZip();
