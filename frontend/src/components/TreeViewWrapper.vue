@@ -39,7 +39,7 @@ export default defineComponent({
     this.reactiveSentence.fromSentenceConll(this.conll);
     
     const sentenceSVGOptions = defaultSentenceSVGOptions();
-    sentenceSVGOptions.shownFeatures = ['FORM'];
+    sentenceSVGOptions.shownFeatures = ['FORM', 'UPOS']
     sentenceSVGOptions.drawEnhancedTokens = true;
     sentenceSVGOptions.interactive = false
     sentenceSVGOptions.arcHeight = 40;
