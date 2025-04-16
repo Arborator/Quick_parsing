@@ -58,30 +58,39 @@ class ParserService:
         return best_models
 
 
+from spacy.language import Language
+from spacy.tokens import Doc
+
 class TextToParseService:
 
     nlp = spacy.load("fr_core_news_sm")
 
+    @Language.component("custom_sentencizer")
+    def custom_sentencizer(doc: Doc) -> Doc:
+        for token in doc[:-1]:
+            if token.text in [".", "!", "?"]:
+                doc[token.i + 1].is_sent_start = True
+        return doc
+
+    
+    nlp.remove_pipe("parser")  
+    nlp.add_pipe("custom_sentencizer", before="ner")
+
     @staticmethod
     def tokenize_and_conllize(text):
-        
+        text = text.replace("\n", " ")
         text = TextToParseService.nlp(text)
+        
         conll_string = ''
 
         for id_sent, sentence in enumerate(text.sents):
-            sentence_text = sentence.text if '\n' not in sentence.text else sentence.text.replace("\n", "")
-
-            index = 1
+            sentence_text = sentence.text.strip() 
             conll_string += f"# sent_id = {id_sent}\n# text = {sentence_text}\n"
-            for token in sentence:
-                token_form = token.text.strip()  
-                if token_form: 
-                    conll_string += f"{index}\t{token_form}\t_\t_\t_\t_\t_\t_\t_\t_\t\n"
-                    index += 1
-
+            for index, token in enumerate(sentence, 1):
+                token_form = token.text.strip()
+                if token_form:
+                    conll_string += f"{index}\t{token_form}\t_\t_\t_\t_\t_\t_\t_\t_\n"
             conll_string += '\n'
-
         return conll_string
-
 
 

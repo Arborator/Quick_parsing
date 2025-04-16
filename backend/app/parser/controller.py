@@ -42,7 +42,6 @@ class ParserParseStartResource(Resource):
         
         if text_to_parse:
             text_conllized = TextToParseService.tokenize_and_conllize(text_to_parse)
-            print(text_conllized)
             files_to_parse['parsed_text'] = text_conllized
 
         if files: 
