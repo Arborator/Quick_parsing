@@ -41,7 +41,7 @@ class ParserParseStartResource(Resource):
         files_to_parse = {}
         
         if text_to_parse:
-            text_conllized = TextToParseService.tokenize_and_conllize(text_to_parse)
+            text_conllized = TextToParseService.tokenize_and_conllize_with_kim(text_to_parse)
             files_to_parse['parsed_text'] = text_conllized
 
         if files: 
