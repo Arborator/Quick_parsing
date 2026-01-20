@@ -16,6 +16,7 @@ class ParserModelsListResource(Resource):
     def get(self):
 
         response = ParserService.send_get_request('/list')
+        print(response)
         if response['status'] == 'failure':
             error_message = f"Sorry the parser is unreachable, please contact the admins, {response['error']}"
             abort(503, error_message)

@@ -21,11 +21,11 @@
         <q-tab-panel name="conll">
           <pre>{{ parsedSamples[parsedSample] }}</pre>
         </q-tab-panel>
-        <q-tab-panel name="tree">
+        <q-tab-panel  name="tree">
           <q-virtual-scroll
             :items="conlls"
             :style="{ height: '100vh' }"
-            :key="conlls.length"
+            :key="conlls.length.toString()"
             :virtual-scroll-item-size="100"
             :virtual-scroll-slice-size="10"
           >

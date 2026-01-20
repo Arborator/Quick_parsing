@@ -7,6 +7,24 @@
         Parsing Settings
       </div>
     </q-card-section>
+    <q-card-section>
+      <q-table
+        :rows="parsersDetails"
+        :columns="[
+          { name: 'treeBank', label: 'Treebank', field: 'treeBank', align: 'left' },
+          { name: 'language', label: 'Language', field: 'language', align: 'left' },
+          { name: 'trainingData', label: 'Training Sentences', field: 'trainingData', align: 'right' },
+          { name: 'UPOS', label: 'UPOS Accuracy', field: 'UPOS', align: 'right' },
+          { name: 'LAS', label: 'LAS', field: 'LAS', align: 'right' }
+        ]"
+        row-key="treeBank"
+        flat
+        dense
+        separator="horizontal"
+        class="q-mb-md"
+      >
+      </q-table>
+    </q-card-section>
 
     <q-card-section class="row q-gutter-md">
       <q-select
@@ -106,6 +124,7 @@ import api from 'src/api/backend-api';
 import { notifyMessage } from 'src/utils/notify';
 import { ParsingSettings_t } from 'src/api/backend_types';
 import { defineComponent } from 'vue';
+import { language } from '@vue/eslint-config-prettier/skip-formatting';
 
 const TIMEOUT_TASK_STATUS_CHECKER = 1000 * 60 * 60 * 3; // 3 hours
 const REFRESH_RATE_TASK_STATUS_CHECKER = 1000 * 10; // 10 seconds
@@ -142,6 +161,20 @@ export default defineComponent({
     disableParseBtn() {
       return (this.parser === null || this.uploadedFiles.length === 0 || this.disableUpload) && (this.textToParse === "" || this.parser === null);
     },
+    parsersDetails() {
+      return this.availableModels.map(model => {
+        const treeBank = model.value.model_info.project_name;
+        const match = treeBank.match(/_(.*?)\-/);
+        const language = match ? match[1] : 'Unknown';
+        return {
+          treeBank,
+          language,
+          UPOS: model.value.scores_best.acc_uposs_epoch.toFixed(3),
+          trainingData: model.value.scores_best.training_diagnostics.data_description.n_train_sents,
+          LAS: model.value.scores_best.LAS_epoch.toFixed(3),
+        }
+      });
+    }
   },
   mounted() {
     this.getModels();
@@ -166,6 +199,7 @@ export default defineComponent({
             this.availableModels = response.data.data.map((model) => {
               return { label: model.model_info.project_name, value: model};
             });
+            console.log('Available models:', this.availableModels);
           }
         })
         .catch((error) => {

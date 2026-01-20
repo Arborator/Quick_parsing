@@ -10,8 +10,11 @@ class ParserService:
     def send_get_request(url_suffix):
 
         url = f"{parser_config.server}/parser/models{url_suffix}"
+        headers = {
+            "X-Application-Models": "quick_parser",
+        }
         try:
-            response = requests.get(url)
+            response = requests.get(url, headers=headers)
             return response.json()
         except requests.exceptions.ReadTimeout:
             error_message = f"connection timout with `url={url}`"
