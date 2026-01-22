@@ -1,6 +1,7 @@
 import requests
 import json
 import spacy
+import os
 
 from app import parser_config
 
@@ -22,7 +23,6 @@ class ParserService:
         except Exception as e:
             error_message = f"unknown error when connecting `url={url}` : {str(e)}"
             return {"status": "failure", "error": error_message}
-        
     
     @staticmethod
     def send_post_request(url_suffix, data):

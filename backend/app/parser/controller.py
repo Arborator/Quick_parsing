@@ -24,6 +24,7 @@ class ParserModelsListResource(Resource):
         else:
             models = response.get("data")
             models = ParserService.get_best_models(models)
+            print(f"DEBUG: After filtering, returning {len(models)} models")
             return { "status": "success", "data": models }
         
 
