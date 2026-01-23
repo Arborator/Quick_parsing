@@ -1,101 +1,99 @@
 <template>
-  <q-card flat>
-    <q-separator />
+  <div class="row justify-center q-mt-lg">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+      <q-card flat class="q-pa-md">
+        <q-separator />
 
-    <q-card-section>
-      <div class="text-h4 text-center text-primary text-bold">
-        Parsing Settings
+        <q-card-section class="q-pa-sm">
+          <div class="text-h4 text-center text-primary text-bold">
+            Parsing Settings
+          </div>
+        </q-card-section>
+
+    <q-card-section class="row items-center q-gutter-sm q-pa-sm">
+      <div class="col-auto">
+        <div class="text-subtitle2">
+          We have {{ availableModels.length }} parsers available:
+        </div>
+      </div>
+      <div class="col-12">
+        <q-select
+          outlined
+          use-input
+          hide-dropdown-icon
+          :placeholder="parser ? '' : 'Select your model to parse'"
+          v-model="parser"
+          option-label="label"
+          option-value="value"
+          :options="filteredModels"
+          @filter="filterModels"
+          dense
+          clearable
+        >
+          <template v-slot:selected-item="scope">
+            <div
+              :tabindex="scope.tabindex"
+              class="selected-model-label text-primary text-weight-bold"
+            >
+              {{ scope.opt.label }}
+            </div>
+          </template>
+          <template v-slot:option="scope">
+            <q-item
+              v-close-popup
+              v-bind="scope.itemProps"
+              clickable
+              ripple
+              dense
+            >
+              <q-item-section>
+                <q-item-label>{{ scope.opt.label }}</q-item-label>
+                <q-item-label caption>{{
+                  scope.opt.value.model_info?.language || ""
+                }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-chip dense outline color="primary">
+                  {{
+                    parseFloat(
+                      scope.opt.value.scores_best?.LAS_epoch || 0,
+                    ).toFixed(3)
+                  }}
+                </q-chip>
+              </q-item-section>
+            </q-item>
+          </template>
+        </q-select>
       </div>
     </q-card-section>
-    <q-card-section>
-      <q-table
-        :rows="parsersDetails"
-        :columns="[
-          { name: 'treeBank', label: 'Treebank', field: 'treeBank', align: 'left' },
-          { name: 'language', label: 'Language', field: 'language', align: 'left' },
-          { name: 'trainingData', label: 'Training Sentences', field: 'trainingData', align: 'right' },
-          { name: 'UPOS', label: 'UPOS Accuracy', field: 'UPOS', align: 'right' },
-          { name: 'LAS', label: 'LAS', field: 'LAS', align: 'right' }
-        ]"
-        row-key="treeBank"
-        flat
-        dense
-        separator="horizontal"
-        class="q-mb-md"
-      >
-      </q-table>
-    </q-card-section>
 
-    <q-card-section class="row q-gutter-md">
-      <q-select
-        class="col"
-        outlined
-        use-input
-        hide-dropdown-icon
-        label="Search Parser"
-        v-model="parser"
-        option-label="label"
-        option-value="value"
-        :options="filteredModels"
-        @filter="filterModels"
-      >
-        <template v-slot:selected-item="scope">
-          <q-chip
-            removable
-            @remove="scope.removeAtIndex(scope.index)"
-            :tabindex="scope.tabindex"
-            dense
-            text-color="primary"
-          >
-            {{ scope.opt.label }}
-          </q-chip>
-        </template>
-        <template v-slot:option="scope">
-          <q-item v-close-popup v-bind="scope.itemProps">
-            <q-item-section>
-              <q-item-label>{{ scope.opt.label }}</q-item-label>
-            </q-item-section>
-            <q-item-section side>
-              <q-item-label>Best LAS</q-item-label>
-              <q-item-label caption>{{ scope.opt.value.scores_best.LAS_epoch.toFixed(3) }}</q-item-label>
-            </q-item-section>
-          </q-item>
-        </template>
-      </q-select>
-    </q-card-section>
-
-    <q-card-section>
-      <q-select
-        v-if="parsingOption !== 'text'"
-        class="col"
-        label="Select CONLL columns to keep while parsing"
-        v-model="columnsToKeep"
-        outlined
-        use-chips
-        multiple
-        :options="conllColumns"
-      >
-      </q-select>
-    </q-card-section>
-
-    <q-separator />
-
-    <q-card-section>
-      <q-tabs v-model="parsingOption" class="bg-primary text-white">
-        <q-tab name="file" label="File input"></q-tab>
-        <q-tab name="text" label="Text input"></q-tab>
+    <q-card-section class="q-pa-sm">
+      <q-tabs v-model="parsingOption">
+        <q-tab :class="parsingOption === 'file' ? 'text-primary' : 'text-grey-6'" name="file">
+          <div>
+            <q-icon name="file_present" size="20px" class="q-mb-xs" />
+            <div class="text-subtitle2">File input</div>
+          </div>
+        </q-tab>
+        <q-tab :class="parsingOption === 'text' ? 'text-primary' : 'text-grey-6'" name="text">
+          <div>
+            <q-icon name="title" size="20px" class="q-mb-xs" />
+            <div class="text-subtitle2">Text input</div>
+          </div>
+        </q-tab>
       </q-tabs>
-      <q-separator />
       <q-tab-panels v-model="parsingOption">
         <q-tab-panel name="file">
           <q-file
-            v-model="uploadedFiles"
+            ref="fileInput"
+            :model-value="uploadedFiles"
             label="Attach one or multiple files"
             use-chips
             outlined
             multiple
             input-style="height:100px"
-            @update:model-value="checkExtension"
+            @update:model-value="fileInputUpdate"
+            @remove="fileRemoved"
           >
           </q-file>
         </q-tab-panel>
@@ -110,71 +108,95 @@
         </q-tab-panel>
       </q-tab-panels>
     </q-card-section>
+    <q-card-section v-if="parsingOption !== 'text'" class="q-pa-sm">
+      <div class="row items-center q-gutter-sm">
+        <div class="col-12">
+          <div class="text-subtitle2">
+            Select CONLL columns to keep while parsing
+          </div>
+        </div>
 
-    <q-card-section>
-      <q-btn outline class="full-width" no-caps :disable="disableParseBtn" color="secondary" label="Parse the input" @click="startParsing" />
+        <div class="col-12">
+          <q-option-group
+            v-model="columnsToKeep"
+            :options="conllColumns.map((c) => ({ label: c, value: c }))"
+            type="checkbox"
+            inline
+          />
+        </div>
+      </div>
     </q-card-section>
 
+    <q-card-section class="row justify-center">
+      <q-btn
+        class="bg-secondary text-white text-bold q-my-sm"
+        no-caps
+        :disable="disableParseBtn"
+        label="PARSE THE INPUT"
+        @click="startParsing"
+      />
+    </q-card-section>
     <q-separator />
-
-  </q-card>
+      </q-card>
+    </div>
+  </div>
 </template>
 <script lang="ts">
-import api from 'src/api/backend-api';
-import { notifyMessage } from 'src/utils/notify';
-import { ParsingSettings_t } from 'src/api/backend_types';
-import { defineComponent } from 'vue';
-import { language } from '@vue/eslint-config-prettier/skip-formatting';
+import api from "src/api/backend-api";
+import { notifyMessage } from "src/utils/notify";
+import { ParsingSettings_t } from "src/api/backend_types";
+import { defineComponent } from "vue";
 
 const TIMEOUT_TASK_STATUS_CHECKER = 1000 * 60 * 60 * 3; // 3 hours
 const REFRESH_RATE_TASK_STATUS_CHECKER = 1000 * 10; // 10 seconds
 
 export default defineComponent({
-  name: 'ParsingComponent',
+  name: "ParsingComponent",
   data() {
     const uploadedFiles: File[] = [];
-    const textToParse: string =  '';
+    const textToParse: string = "";
     const parser: any = null;
     const taskTimeStarted: number = 0;
     const availableModels: any[] = [];
     const filteredModels: any[] = [];
     const columnsToKeep: string[] = [];
-    const conllColumns: string[] = ['LEMMA', 'UPOS', 'XPOS', 'FEATS', 'HEAD', 'DEPREL'];
+    const conllColumns: string[] = [
+      "LEMMA",
+      "UPOS",
+      "XPOS",
+      "FEATS",
+      "HEAD",
+      "DEPREL",
+    ];
     const parsedSamples: { [key: string]: string } = {};
     return {
       uploadedFiles,
       textToParse,
       parser,
-      parsingOption: 'file',
-      resultViewOption: 'conll',
+      parsingOption: "file",
+      resultViewOption: "conll",
       availableModels,
       filteredModels,
       columnsToKeep,
       conllColumns,
-      taskTimeStarted, 
+      taskTimeStarted,
       parsedSamples,
       disableUpload: false,
-      taskIntervalChecker: null as null | ReturnType<typeof setTimeout> | ReturnType<typeof setInterval>,
-    }
+      taskIntervalChecker: null as
+        | null
+        | ReturnType<typeof setTimeout>
+        | ReturnType<typeof setInterval>,
+    };
   },
   computed: {
     disableParseBtn() {
-      return (this.parser === null || this.uploadedFiles.length === 0 || this.disableUpload) && (this.textToParse === "" || this.parser === null);
+      return (
+        (this.parser === null ||
+          this.uploadedFiles.length === 0 ||
+          this.disableUpload) &&
+        (this.textToParse === "" || this.parser === null)
+      );
     },
-    parsersDetails() {
-      return this.availableModels.map(model => {
-        const treeBank = model.value.model_info.project_name;
-        const match = treeBank.match(/_(.*?)\-/);
-        const language = match ? match[1] : 'Unknown';
-        return {
-          treeBank,
-          language,
-          UPOS: model.value.scores_best.acc_uposs_epoch.toFixed(3),
-          trainingData: model.value.scores_best.training_diagnostics.data_description.n_train_sents,
-          LAS: model.value.scores_best.LAS_epoch.toFixed(3),
-        }
-      });
-    }
   },
   mounted() {
     this.getModels();
@@ -185,29 +207,65 @@ export default defineComponent({
       this.disableUpload = false;
       for (const file of this.uploadedFiles) {
         if (!extension.test(file.name)) {
-          notifyMessage(`You have to upload Conll file`, 5000, 'warning');
+          notifyMessage(`You have to upload Conll file`, 5000, "warning");
           this.disableUpload = true;
-          return 
+          return;
         }
       }
     },
-    getModels() {
-      api
-        .getParsers()
-        .then((response) => {
-          if (response.data.status === 'success') {
-            this.availableModels = response.data.data.map((model) => {
-              return { label: model.model_info.project_name, value: model};
-            });
-            console.log('Available models:', this.availableModels);
-          }
-        })
-        .catch((error) => {
-          notifyMessage(error.response.data.message, 10000, 'negative');
-        })
+    async getModels() {
+      try {
+        const response = await api.getParsers();
+        if (
+          response?.data?.status === "success" &&
+          Array.isArray(response.data.data) &&
+          response.data.data.length > 0
+        ) {
+          this.availableModels = response.data.data.map((model) => {
+            return { label: model.model_info.project_name, value: model };
+          });
+        } else {
+          const mock1 = {
+            model_info: { project_name: "Mock Parser A", language: "en" },
+            scores_best: { LAS_epoch: 0.912 },
+          };
+          const mock2 = {
+            model_info: { project_name: "Mock Parser B", language: "fr" },
+            scores_best: { LAS_epoch: 0.845 },
+          };
+          this.availableModels = [
+            { label: mock1.model_info.project_name, value: mock1 },
+            { label: mock2.model_info.project_name, value: mock2 },
+          ];
+          notifyMessage("No parsers", 7000, "info");
+        }
+      } catch (error: any) {
+        const mock1 = {
+          model_info: { project_name: "Mock Parser A", language: "en" },
+          scores_best: { LAS_epoch: 0.912 },
+        };
+        const mock2 = {
+          model_info: { project_name: "Mock Parser B", language: "fr" },
+          scores_best: { LAS_epoch: 0.845 },
+        };
+        this.availableModels = [
+          { label: mock1.model_info.project_name, value: mock1 },
+          { label: mock2.model_info.project_name, value: mock2 },
+        ];
+        const msg =
+          error?.response?.data?.message || error?.message || String(error);
+        notifyMessage(
+          `Failed to load parsers, using mocks — ${msg}`,
+          8000,
+          "warning",
+        );
+      } finally {
+        this.filteredModels = this.availableModels;
+        console.log("Available models:", this.availableModels);
+      }
     },
     filterModels(val: string, update: (callback: () => void) => void) {
-      if (val === '') {
+      if (val === "") {
         update(() => {
           this.filteredModels = this.availableModels;
         });
@@ -215,38 +273,45 @@ export default defineComponent({
       }
       update(() => {
         const needle = val.toLowerCase();
-        this.filteredModels = this.availableModels.filter((v) => v.label.toLowerCase().indexOf(needle) > -1);
+        this.filteredModels = this.availableModels.filter(
+          (v) => v.label.toLowerCase().indexOf(needle) > -1,
+        );
       });
     },
     startParsing() {
       const parsingSettings: ParsingSettings_t = {
-        keep_heads: this.columnsToKeep.includes('HEAD') ? 'EXISTING' : 'NONE',
-        keep_upos: this.columnsToKeep.includes('UPOS') ? 'EXISTING' : 'NONE',
-        keep_feats: this.columnsToKeep.includes('FEATS') ? 'EXISTING' : 'NONE',
-        keep_xpos: this.columnsToKeep.includes('XPOS') ? 'EXISTING' : 'NONE',
-        keep_deprels: this.columnsToKeep.includes('DEPREL') ? 'EXISTING' : 'NONE',
-        keep_lemmas: this.columnsToKeep.includes('LEMMA') ? 'EXISTING' : 'NONE',
-
-      }
+        keep_heads: this.columnsToKeep.includes("HEAD") ? "EXISTING" : "NONE",
+        keep_upos: this.columnsToKeep.includes("UPOS") ? "EXISTING" : "NONE",
+        keep_feats: this.columnsToKeep.includes("FEATS") ? "EXISTING" : "NONE",
+        keep_xpos: this.columnsToKeep.includes("XPOS") ? "EXISTING" : "NONE",
+        keep_deprels: this.columnsToKeep.includes("DEPREL")
+          ? "EXISTING"
+          : "NONE",
+        keep_lemmas: this.columnsToKeep.includes("LEMMA") ? "EXISTING" : "NONE",
+      };
       const form = new FormData();
 
       for (const file of this.uploadedFiles) {
-        form.append('files', file);
+        form.append("files", file);
       }
 
-      form.append('text_to_parse', this.textToParse);
-      form.append('model', JSON.stringify(this.parser.value));
-      form.append('parsingSettings', JSON.stringify(parsingSettings));
+      form.append("text_to_parse", this.textToParse);
+      form.append("model", JSON.stringify(this.parser.value));
+      form.append("parsingSettings", JSON.stringify(parsingSettings));
 
       this.taskTimeStarted = Date.now();
 
       api
         .parserParseStart(form)
         .then((response) => {
-          if (response.data.status === 'failure') {
-            notifyMessage('Parsing could not start : ' + response.data.error , 10000, 'negative');
+          if (response.data.status === "failure") {
+            notifyMessage(
+              "Parsing could not start : " + response.data.error,
+              10000,
+              "negative",
+            );
           } else {
-            notifyMessage('Sentences parsing started', 10000, 'positive');
+            notifyMessage("Sentences parsing started", 10000, "positive");
             const parseTaskId = response.data.data.parse_task_id;
             this.taskIntervalChecker = setInterval(() => {
               setTimeout(this.checkParserStatus(parseTaskId) as any, 10);
@@ -254,34 +319,35 @@ export default defineComponent({
           }
         })
         .catch((error) => {
-          notifyMessage(error, 10000, 'negative');
+          notifyMessage(error, 10000, "negative");
         });
     },
     checkParserStatus(taskId: string) {
-      const data = { task_id: taskId }
+      const data = { task_id: taskId };
       api
         .parserParseStatus(data)
         .then((response) => {
-          if (response.data.status === 'failure') {
-            notifyMessage(response.data.error, 10000, 'negative');
+          if (response.data.status === "failure") {
+            notifyMessage(response.data.error, 10000, "negative");
             this.clearCurrentTask();
           } else if (response.data.data.ready) {
             this.clearCurrentTask();
             this.parsedSamples = response.data.data.parsed_samples;
-            this.$emit('get-parsing', this.parsedSamples);
-            notifyMessage('Sentences parsing ended!', 0, 'positive');  
-          }
-          else if (Date.now() - this.taskTimeStarted > TIMEOUT_TASK_STATUS_CHECKER) {
+            this.$emit("get-parsing", this.parsedSamples);
+            notifyMessage("Sentences parsing ended!", 0, "positive");
+          } else if (
+            Date.now() - this.taskTimeStarted >
+            TIMEOUT_TASK_STATUS_CHECKER
+          ) {
             this.clearCurrentTask();
-          }
-          else if (taskId === 'PARSING') {
+          } else if (taskId === "PARSING") {
             window.onbeforeunload = function () {
-              return 'You have already started parsing, if you leave the page the changes will not be saved';
-            }
+              return "You have already started parsing, if you leave the page the changes will not be saved";
+            };
           }
         })
         .catch((error) => {
-          notifyMessage(error, 10000, 'negative');
+          notifyMessage(error, 10000, "negative");
           this.clearCurrentTask();
         });
     },
@@ -289,9 +355,49 @@ export default defineComponent({
       if (this.taskIntervalChecker !== null) {
         clearInterval(this.taskIntervalChecker);
       }
-    }, 
-    
-  }
+    },
 
+    fileInputUpdate(newFile: FileList | File[] | File | null) {
+      const toArray = (f: any): File[] =>
+        !f
+          ? []
+          : typeof FileList !== "undefined" && f instanceof FileList
+            ? Array.from(f)
+            : Array.isArray(f)
+              ? f
+              : [f];
+
+      const income = toArray(newFile);
+      const exist: File[] = this.uploadedFiles || [];
+
+      if (income.length < exist.length) {
+        this.uploadedFiles = income;
+      } else {
+        const present = exist.slice();
+        for (const f of income) {
+          if (!present.some((e) => e.name === f.name)) {
+            present.push(f);
+          }
+        }
+        this.uploadedFiles = present;
+      }
+
+      this.checkExtension();
+
+      const refComp: any = this.$refs.fileInput;
+      if (refComp && typeof refComp.reset === "function") refComp.reset();
+      else if (refComp && refComp.$el) {
+        const input = refComp.$el.querySelector("input[type=file]");
+        if (input) input.value = "";
+      }
+    },
+
+    fileRemoved(file: File) {
+      this.uploadedFiles = (this.uploadedFiles || []).filter(
+        (f) => !(f.name === file.name),
+      );
+      this.checkExtension();
+    },
+  },
 });
 </script>
