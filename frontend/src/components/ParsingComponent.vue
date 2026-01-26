@@ -10,133 +10,152 @@
           </div>
         </q-card-section>
 
-    <q-card-section class="row items-center q-gutter-sm q-pa-sm">
-      <div class="col-auto">
-        <div class="text-subtitle2">
-          We have {{ availableModels.length }} parsers available:
-        </div>
-      </div>
-      <div class="col-12">
-        <q-select
-          outlined
-          use-input
-          hide-dropdown-icon
-          :placeholder="parser ? '' : 'Select your model to parse'"
-          v-model="parser"
-          option-label="label"
-          option-value="value"
-          :options="filteredModels"
-          @filter="filterModels"
-          dense
-          clearable
-        >
-          <template v-slot:selected-item="scope">
-            <div
-              :tabindex="scope.tabindex"
-              class="selected-model-label text-primary text-weight-bold"
-            >
-              {{ scope.opt.label }}
+        <q-card-section class="row items-center q-gutter-sm q-pa-sm">
+          <div class="col-auto">
+            <div class="text-subtitle2">
+              We have {{ availableModels.length }} parsers available:
             </div>
-          </template>
-          <template v-slot:option="scope">
-            <q-item
-              v-close-popup
-              v-bind="scope.itemProps"
-              clickable
-              ripple
+          </div>
+          <div class="col-12">
+            <q-select
+              outlined
+              use-input
+              hide-dropdown-icon
+              :placeholder="parser ? '' : 'Select your model to parse'"
+              v-model="parser"
+              option-label="label"
+              option-value="value"
+              :options="filteredModels"
+              @filter="filterModels"
               dense
+              clearable
             >
-              <q-item-section>
-                <q-item-label>{{ scope.opt.label }}</q-item-label>
-                <q-item-label caption>{{
-                  scope.opt.value.model_info?.language || ""
-                }}</q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-chip dense outline color="primary">
-                  {{
-                    parseFloat(
-                      scope.opt.value.scores_best?.LAS_epoch || 0,
-                    ).toFixed(3)
-                  }}
-                </q-chip>
-              </q-item-section>
-            </q-item>
-          </template>
-        </q-select>
-      </div>
-    </q-card-section>
+              <template v-slot:selected-item="scope">
+                <div
+                  :tabindex="scope.tabindex"
+                  class="selected-model-label text-primary text-weight-bold"
+                >
+                  {{ scope.opt.label }}
+                </div>
+              </template>
+              <template v-slot:option="scope">
+                <q-item
+                  v-close-popup
+                  v-bind="scope.itemProps"
+                  clickable
+                  ripple
+                  dense
+                >
+                  <q-item-section>
+                    <q-item-label>{{ scope.opt.label }}</q-item-label>
+                    <q-item-label caption>{{
+                      scope.opt.value.model_info?.language || ""
+                    }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-chip dense outline color="primary">
+                      {{
+                        parseFloat(
+                          scope.opt.value.scores_best?.LAS_epoch || 0,
+                        ).toFixed(3)
+                      }}
+                    </q-chip>
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
+          </div>
+        </q-card-section>
 
-    <q-card-section class="q-pa-sm">
-      <q-tabs v-model="parsingOption">
-        <q-tab :class="parsingOption === 'file' ? 'text-primary' : 'text-grey-6'" name="file">
-          <div>
-            <q-icon name="file_present" size="20px" class="q-mb-xs" />
-            <div class="text-subtitle2">File input</div>
-          </div>
-        </q-tab>
-        <q-tab :class="parsingOption === 'text' ? 'text-primary' : 'text-grey-6'" name="text">
-          <div>
-            <q-icon name="title" size="20px" class="q-mb-xs" />
-            <div class="text-subtitle2">Text input</div>
-          </div>
-        </q-tab>
-      </q-tabs>
-      <q-tab-panels v-model="parsingOption">
-        <q-tab-panel name="file">
-          <q-file
-            ref="fileInput"
-            :model-value="uploadedFiles"
-            label="Attach one or multiple files"
-            use-chips
-            outlined
-            multiple
-            input-style="height:100px"
-            @update:model-value="fileInputUpdate"
-            @remove="fileRemoved"
-          >
-          </q-file>
-        </q-tab-panel>
-        <q-tab-panel name="text">
-          <q-input
-            v-model="textToParse"
-            outlined
-            type="textarea"
-            label="Text to parse"
-          >
-          </q-input>
-        </q-tab-panel>
-      </q-tab-panels>
-    </q-card-section>
-    <q-card-section v-if="parsingOption !== 'text'" class="q-pa-sm">
-      <div class="row items-center q-gutter-sm">
-        <div class="col-12">
-          <div class="text-subtitle2">
-            Select CONLL columns to keep while parsing
-          </div>
-        </div>
+        <q-card-section class="q-pa-sm">
+          <q-tabs v-model="parsingOption">
+            <q-tab
+              :class="parsingOption === 'file' ? 'text-primary' : 'text-grey-6'"
+              name="file"
+            >
+              <div>
+                <q-icon name="file_present" size="20px" class="q-mb-xs" />
+                <div class="text-subtitle2">File input</div>
+              </div>
+            </q-tab>
+            <q-tab
+              :class="parsingOption === 'text' ? 'text-primary' : 'text-grey-6'"
+              name="text"
+            >
+              <div>
+                <q-icon name="title" size="20px" class="q-mb-xs" />
+                <div class="text-subtitle2">Text input</div>
+              </div>
+            </q-tab>
+          </q-tabs>
+          <q-tab-panels v-model="parsingOption">
+            <q-tab-panel name="file">
+              <q-file
+                ref="fileInput"
+                :model-value="uploadedFiles"
+                label="Attach one or multiple files"
+                use-chips
+                outlined
+                multiple
+                input-style="height:100px"
+                @update:model-value="fileInputUpdate"
+                @remove="fileRemoved"
+              >
+              </q-file>
+            </q-tab-panel>
+            <q-tab-panel name="text" class="q-gutter-md">
+              <q-input
+                outlined
+                v-model="textToParse"
+                type="textarea"
+                label="Text to parse"
+                class="q-mb-sm"
+              />
+              <div class="row items-center q-gutter-sm">
+                <div class="col-12">
+                  <div class="text-subtitle2">Select text format to parse</div>
+                </div>
+                <div class="col-12">
+                <q-option-group
+                  v-model="textFormat"
+                  :options="textFormatOptions"
+                  type="radio"
+                  inline
+                />
+               </div>
+              </div>
+            </q-tab-panel>
+          </q-tab-panels>
+        </q-card-section>
+        <q-card-section v-if="parsingOption !== 'text'" class="q-pa-sm">
+          <div class="row items-center q-gutter-sm">
+            <div class="col-12">
+              <div class="text-subtitle2">
+                Select CONLL columns to keep while parsing
+              </div>
+            </div>
 
-        <div class="col-12">
-          <q-option-group
-            v-model="columnsToKeep"
-            :options="conllColumns.map((c) => ({ label: c, value: c }))"
-            type="checkbox"
-            inline
+            <div class="col-12">
+              <q-option-group
+                v-model="columnsToKeep"
+                :options="conllColumns.map((c) => ({ label: c, value: c }))"
+                type="checkbox"
+                inline
+              />
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-section class="row justify-center">
+          <q-btn
+            class="bg-secondary text-white text-bold q-my-sm"
+            no-caps
+            :disable="disableParseBtn"
+            label="PARSE THE INPUT"
+            @click="startParsing"
           />
-        </div>
-      </div>
-    </q-card-section>
-
-    <q-card-section class="row justify-center">
-      <q-btn
-        class="bg-secondary text-white text-bold q-my-sm"
-        no-caps
-        :disable="disableParseBtn"
-        label="PARSE THE INPUT"
-        @click="startParsing"
-      />
-    </q-card-section>
-    <q-separator />
+        </q-card-section>
+        <q-separator />
       </q-card>
     </div>
   </div>
@@ -175,6 +194,12 @@ export default defineComponent({
       parser,
       parsingOption: "file",
       resultViewOption: "conll",
+      textFormatOptions: [
+        { label: "Plain text", value: "plainText" },
+        { label: "Vertical", value: "vertical" },
+        { label: "Horizontal", value: "horizontal" },
+      ],
+      textFormat: "plainText",
       availableModels,
       filteredModels,
       columnsToKeep,
@@ -190,12 +215,10 @@ export default defineComponent({
   },
   computed: {
     disableParseBtn() {
-      return (
-        (this.parser === null ||
-          this.uploadedFiles.length === 0 ||
-          this.disableUpload) &&
-        (this.textToParse === "" || this.parser === null)
-      );
+      if (this.parser === null || this.disableUpload) return true;
+      if (this.parsingOption === "file") return this.uploadedFiles.length === 0;
+      if (this.parsingOption === "text") return this.textToParse.trim() === "";
+      return true;
     },
   },
   mounted() {
