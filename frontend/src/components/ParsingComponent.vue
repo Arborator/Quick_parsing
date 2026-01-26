@@ -319,6 +319,7 @@ export default defineComponent({
       }
 
       form.append("text_to_parse", this.textToParse);
+      form.append("text_format", this.textFormat);
       form.append("model", JSON.stringify(this.parser.value));
       form.append("parsingSettings", JSON.stringify(parsingSettings));
 
