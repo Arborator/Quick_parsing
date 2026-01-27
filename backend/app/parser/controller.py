@@ -32,18 +32,34 @@ class ParserModelsListResource(Resource):
 class ParserParseStartResource(Resource):
 
     def post(self):
-
-      
-        text_to_parse = request.form.get('text_to_parse')
         files = request.files.to_dict(flat=False).get("files")
-    
-        model = json.loads(request.form.get('model'))
-        parsing_settings = json.loads(request.form.get('parsingSettings'))
+
+        if request.is_json:
+            payload = request.get_json(force=True)
+            text_to_parse = payload.get('text') or payload.get('text_to_parse')
+            text_format = payload.get('option') or payload.get('text_format')
+            model = payload.get('model')
+            parsing_settings = payload.get('parsingSettings')
+            try:
+                if isinstance(model, str):
+                    model = json.loads(model)
+            except Exception:
+                pass
+            try:
+                if isinstance(parsing_settings, str):
+                    parsing_settings = json.loads(parsing_settings)
+            except Exception:
+                pass
+        else:
+            text_to_parse = request.form.get('text_to_parse')
+            text_format = request.form.get('text_format')
+            model = json.loads(request.form.get('model'))
+            parsing_settings = json.loads(request.form.get('parsingSettings'))
 
         files_to_parse = {}
         
         if text_to_parse:
-            text_conllized = TextToParseService.tokenize_and_conllize_with_kim(text_to_parse)
+            text_conllized = TextToParseService.tokenize_and_conllize_with_kim(text_to_parse, option=text_format)
             files_to_parse['parsed_text'] = text_conllized
 
         if files: 

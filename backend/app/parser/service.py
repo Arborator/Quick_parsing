@@ -97,13 +97,35 @@ class TextToParseService:
         return conll_string
     
     @staticmethod
-    def tokenize_and_conllize_with_kim(text):
+    def tokenize_and_conllize_with_kim(text, option=None, lang='fr'):
+        if option in (None, 'plainText', 'plain'):
+            sent2toks = tokenize_plain_text(text, lang=lang)
+            return conllize_plain_text(sent2toks, sample_name="sample", start=0)
 
-       
-        sent2toks = tokenize_plain_text(text, lang='fr')
-        conll_string = conllize_plain_text(sent2toks, sample_name="sample", start=0)
+        if option in ['vertical', 'horizontal']:
+            sentences = split_sentences(text, option)
+            conll_out = ""
+            idx = 0
+            for s in sentences:
+                if s and s.strip():
+                    idx += 1
+                    conll_out += conllize_sentence(s, "sample", idx, option)
+            return conll_out
         
-        return conll_string
+        conll_out = str()
+        if lang:
+            list_tokens = tokenize_plain_text(text=text, lang=lang)
+            conll_out = conllize_plain_text(sent2toks=list_tokens, sample_name="sample", start=0)
+            return conll_out
+
+        sentences = split_sentences(text, option)
+        idx = 0
+        for i in range(len(sentences)):
+            if sentences[i]:
+                idx += 1
+                conll_out += conllize_sentence(sentences[i], "sample", idx, option)
+
+        return conll_out
 
 
 ###########################"tokenizer Kim's script" ###########################
@@ -268,3 +290,28 @@ def conllize_plain_text(sent2toks, sample_name, start):
         conlls+=['\n'.join(conllines)]
         start+=1
     return '\n\n'.join(conlls)+'\n'
+def split_sentences(text, option):
+    if option == 'horizontal':
+        return text.split("\n")
+    else:
+        sentences = []
+        for sentence in text.split('\n\n'):
+            sentences.append(sentence)
+        return sentences
+
+def conllize_sentence(sentence_tokens, sample_name, index, option):
+    sentence_tokens = sentence_tokens.replace("\t", ' ')
+    sent_id = '# sent_id = {}__{}\n'.format(sample_name, index)
+    text = '# text = '
+    sentence = str()
+    conll = str()
+    i = 1
+    delimiter = " " if option == 'horizontal' else "\n" 
+    for token in sentence_tokens.rstrip().split(delimiter):
+        text += "{} ".format(token)
+        sentence += '{}\t{}\t_\t_\t_\t_\t_\t_\t_\t_\t\n'.format(i,token)
+        i += 1
+    conll += sent_id
+    conll += text +"\n"
+    conll += sentence + "\n"
+    return conll
