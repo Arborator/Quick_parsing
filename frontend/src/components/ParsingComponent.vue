@@ -301,6 +301,17 @@ export default defineComponent({
         );
       });
     },
+    safeNormalize(text: string | null | undefined) {
+      if (!text) return "";
+      if (typeof (String.prototype as any).normalize === "function") {
+        try {
+          return (text as any).normalize("NFC");
+        } catch (e) {
+          return text;
+        }
+      }
+      return text;
+    },
     startParsing() {
       const parsingSettings: ParsingSettings_t = {
         keep_heads: this.columnsToKeep.includes("HEAD") ? "EXISTING" : "NONE",
@@ -312,12 +323,49 @@ export default defineComponent({
           : "NONE",
         keep_lemmas: this.columnsToKeep.includes("LEMMA") ? "EXISTING" : "NONE",
       };
-      const form = new FormData();
+      if (this.parsingOption === "text") {
+        let payloadText = this.safeNormalize(this.textToParse);
+        payloadText = payloadText.replace(/\r/g, "");
+        if (this.textFormat === "vertical") {
+          payloadText = payloadText.replace(/\n{3,}/g, "\n\n");
+          if (!payloadText.endsWith("\n\n")) payloadText = payloadText + "\n\n";
+        }
 
+        const payload = {
+          text: payloadText,
+          option: this.textFormat,
+          model: this.parser?.value || this.parser,
+          parsingSettings,
+        };
+
+        this.taskTimeStarted = Date.now();
+        api
+          .parserParseStart(payload)
+          .then((response) => {
+            if (response.data.status === "failure") {
+              notifyMessage(
+                "Parsing could not start : " + response.data.error,
+                10000,
+                "negative",
+              );
+            } else {
+              notifyMessage("Sentences parsing started", 10000, "positive");
+              const parseTaskId = response.data.data.parse_task_id;
+              this.taskIntervalChecker = setInterval(() => {
+                setTimeout(this.checkParserStatus(parseTaskId) as any, 10);
+              }, REFRESH_RATE_TASK_STATUS_CHECKER);
+            }
+          })
+          .catch((error) => {
+            notifyMessage(error, 10000, "negative");
+          });
+        return;
+      }
+
+      const form = new FormData();
       for (const file of this.uploadedFiles) {
         form.append("files", file);
       }
-
       form.append("text_to_parse", this.textToParse);
       form.append("text_format", this.textFormat);
       form.append("model", JSON.stringify(this.parser.value));
