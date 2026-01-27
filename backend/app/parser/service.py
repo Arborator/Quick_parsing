@@ -111,9 +111,21 @@ class TextToParseService:
                     idx += 1
                     conll_out += conllize_sentence(s, "sample", idx, option)
             return conll_out
+        
+        conll_out = str()
+        if lang:
+            list_tokens = tokenize_plain_text(text=text, lang=lang)
+            conll_out = conllize_plain_text(sent2toks=list_tokens, sample_name="sample", start=0)
+            return conll_out
 
-        sent2toks = tokenize_plain_text(text, lang=lang)
-        return conllize_plain_text(sent2toks, sample_name="sample", start=0)
+        sentences = split_sentences(text, option)
+        idx = 0
+        for i in range(len(sentences)):
+            if sentences[i]:
+                idx += 1
+                conll_out += conllize_sentence(sentences[i], "sample", idx, option)
+
+        return conll_out
 
 
 ###########################"tokenizer Kim's script" ###########################
