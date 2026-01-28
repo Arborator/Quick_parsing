@@ -69,8 +69,9 @@
           v-for="t in tabs"
           :key="t.name"
           :name="t.name"
-          :label="t.label"
-        />
+        >
+          <div class="text-subtitle2 text-bold">{{ t.label }}</div>
+        </q-tab>
       </q-tabs>
     </div>
 

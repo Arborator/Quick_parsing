@@ -1,6 +1,6 @@
 <template>
   <div class="row justify-center q-mt-lg">
-    <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+    <div :class="fullWidth ? 'col-12' : 'col-12 col-sm-10 col-md-8 col-lg-6'">
       <q-card flat class="q-pa-md">
         <q-separator />
 
@@ -85,6 +85,11 @@ export default defineComponent({
     parsedSamples: {
       type: Object as PropType<{ [key: string]: string }>,
       required: true,
+    },
+    fullWidth: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
   },
   data() {
