@@ -1,5 +1,5 @@
 <template>
-  <div class="row justify-center q-mt-lg">
+  <div class="row justify-center">
     <div class="col-12 col-sm-10 col-md-8 col-lg-6">
       <q-card flat class="q-pa-md">
         <q-separator />
@@ -71,13 +71,12 @@ export default defineComponent({
     }
 
     try {
-      const stored = sessionStorage.getItem('parsedSamples');
+      const stored = localStorage.getItem('parsedSamples');
       if (stored) {
         this.parsedSamples = JSON.parse(stored);
-          sessionStorage.removeItem('parsedSamples');
       }
     } catch (e) {
-        console.warn('Failed to access sessionStorage for parsedSamples', e);
+        console.warn('Failed to access localStorage for parsedSamples', e);
         notifyMessage('Could not retrieve stored parsing results', 5000, 'warning');
     }
   },

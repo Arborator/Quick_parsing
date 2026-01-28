@@ -1,79 +1,53 @@
 <template>
   <q-layout view="hHh Lpr fFf">
-    <q-header class="q-pa-md">
-      <q-bar
-        class="row q-gutter-md justify-evenly bg-primary"
-        style="height: 7.5vh"
-      >
+    <q-header class="bg-primary q-px-lg q-py-sm">
+      <div class="row items-center q-gutter-lg" style="height: 70px">
         <q-btn flat href="https://arborator.grew.fr/" :ripple="false" type="a">
-          <div
-            class="q-btn__content text-center col items-center q-anchor--skip row"
-          >
-            <img
-              alt="Arborator"
-              src="/svg/arborator.grew.white.svg"
-              style="height: 4vh"
-            />
-          </div>
+          <img
+            alt="Arborator"
+            src="/svg/arborator.grew.white.svg"
+            style="height: 50px; object-fit: contain"
+          />
         </q-btn>
         <q-space />
-        <q-btn
-          flat
-          href="https://autogramm.github.io/"
-          :ripple="false"
-          type="a"
-        >
-          <div
-            class="q-btn__content text-center col items-center q-anchor--skip row"
-          >
-            <img
-              alt="autogramm"
-              src="/images/logo_autogramm.svg"
-              style="height: 6vh"
-            />
-          </div>
+
+        <q-btn flat href="https://autogramm.github.io/" :ripple="false" type="a">
+          <img
+            alt="autogramm"
+            src="/images/logo_autogramm.svg"
+            style="height: 45px; object-fit: contain"
+          />
         </q-btn>
-        <q-btn
-          flat
-          href="https://www.unicaen.fr/projet_de_recherche/automated/"
-          :ripple="false"
-          type="a"
-        >
-          <div
-            class="q-btn__content text-center col items-center q-anchor--skip row"
-          >
-            <img
-              alt="Arborator"
-              src="/images/logo_automated.png"
-              style="height: 6vh"
-            />
-          </div>
+        <q-btn flat href="https://www.unicaen.fr/projet_de_recherche/automated/" :ripple="false" type="a">
+          <img
+            alt="Automated"
+            src="/images/logo_automated.png"
+            style="height: 45px; object-fit: contain"
+          />
         </q-btn>
-      </q-bar>
+      </div>
     </q-header>
 
-    <q-breadcrumbs class="q-pa-md bg-grey-2">
+    <q-breadcrumbs class="q-px-lg q-py-lg">
       <q-breadcrumbs-el v-for="t in tabs" :key="t.name" :label="t.label" />
     </q-breadcrumbs>
 
-    <div class="row justify-center q-pa-lg">
-      <q-tabs
-        v-model="currentTab"
-        dense
-        class="text-primary"
-        active-color="primary"
-        indicator-color="primary"
-        @update:model-value="navigateTo"
-      >
-        <q-tab
-          v-for="t in tabs"
-          :key="t.name"
-          :name="t.name"
+    <q-bar class="bg-white">
+      <div class="row justify-center full-width">
+        <q-tabs
+          v-model="currentTab"
+          dense
+          class="text-primary"
+          active-color="primary"
+          indicator-color="primary"
+          @update:model-value="navigateTo"
         >
-          <div class="text-subtitle2 text-bold">{{ t.label }}</div>
-        </q-tab>
-      </q-tabs>
-    </div>
+          <q-tab v-for="t in tabs" :key="t.name" :name="t.name">
+            <div class="text-subtitle2 text-bold">{{ t.label }}</div>
+          </q-tab>
+        </q-tabs>
+      </div>
+    </q-bar>
 
     <q-separator />
 

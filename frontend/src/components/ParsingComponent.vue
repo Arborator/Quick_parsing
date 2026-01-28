@@ -1,5 +1,5 @@
 <template>
-  <div class="row justify-center q-mt-lg">
+  <div class="row justify-center">
     <div class="col-12 col-sm-10 col-md-8 col-lg-6">
       <q-card flat class="q-pa-md">
         <q-separator />
@@ -128,7 +128,19 @@
             </q-tab-panel>
           </q-tab-panels>
         </q-card-section>
+
         <q-card-section v-if="parsingOption !== 'text'" class="q-pa-sm">
+          <q-btn
+            flat
+            dense
+            :icon="showAdvanced ? 'expand_less' : 'expand_more'"
+            :label="showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings'"
+            @click="showAdvanced = !showAdvanced"
+            class="text-primary text-bold"
+          />
+        </q-card-section>
+
+        <q-card-section v-if="parsingOption !== 'text' && showAdvanced" class="q-pa-sm bg-grey-1">
           <div class="row items-center q-gutter-sm">
             <div class="col-12">
               <div class="text-subtitle2">
@@ -208,10 +220,12 @@ export default defineComponent({
       taskTimeStarted,
       parsedSamples,
       disableUpload: false,
+      showAdvanced: false,
       taskIntervalChecker: null as
         | null
         | ReturnType<typeof setTimeout>
         | ReturnType<typeof setInterval>,
+      inProgressNotify: null as null | (() => void),
     };
   },
   computed: {
@@ -355,6 +369,11 @@ export default defineComponent({
               );
             } else {
               notifyMessage("Sentences parsing started", 10000, "positive");
+              try {
+                this.inProgressNotify = notifyMessage("Parsing in progress...", 0, "info");
+              } catch (e) {
+                this.inProgressNotify = null;
+              }
               const parseTaskId = response.data.data.parse_task_id;
               this.taskIntervalChecker = setInterval(() => {
                 setTimeout(this.checkParserStatus(parseTaskId) as any, 10);
@@ -389,6 +408,11 @@ export default defineComponent({
             );
           } else {
             notifyMessage("Sentences parsing started", 10000, "positive");
+            try {
+              this.inProgressNotify = notifyMessage("Parsing in progress...", 0, "info");
+            } catch (e) {
+              this.inProgressNotify = null;
+            }
             const parseTaskId = response.data.data.parse_task_id;
             this.taskIntervalChecker = setInterval(() => {
               setTimeout(this.checkParserStatus(parseTaskId) as any, 10);
@@ -405,10 +429,17 @@ export default defineComponent({
         .parserParseStatus(data)
         .then((response) => {
           if (response.data.status === "failure") {
+            if (this.inProgressNotify) {
+              try { this.inProgressNotify(); } catch (e) {}
+              this.inProgressNotify = null;
+            }
             notifyMessage(response.data.error, 10000, "negative");
             this.clearCurrentTask();
           } else if (response.data.data.ready) {
-            this.clearCurrentTask();
+            if (this.inProgressNotify) {
+              try { this.inProgressNotify(); } catch (e) {}
+              this.inProgressNotify = null;
+            }
             this.parsedSamples = response.data.data.parsed_samples;
             this.$emit("get-parsing", this.parsedSamples);
             notifyMessage("Sentences parsing ended!", 0, "positive");
@@ -416,7 +447,10 @@ export default defineComponent({
             Date.now() - this.taskTimeStarted >
             TIMEOUT_TASK_STATUS_CHECKER
           ) {
-            this.clearCurrentTask();
+            if (this.inProgressNotify) {
+              try { this.inProgressNotify(); } catch (e) {}
+              this.inProgressNotify = null;
+            }
           } else if (taskId === "PARSING") {
             window.onbeforeunload = function () {
               return "You have already started parsing, if you leave the page the changes will not be saved";
@@ -424,8 +458,11 @@ export default defineComponent({
           }
         })
         .catch((error) => {
+          if (this.inProgressNotify) {
+            try { this.inProgressNotify(); } catch (e) {}
+            this.inProgressNotify = null;
+          }
           notifyMessage(error, 10000, "negative");
-          this.clearCurrentTask();
         });
     },
     clearCurrentTask() {
