@@ -11,9 +11,7 @@
         </q-card-section>
 
         <q-card-section class="q-pa-sm">
-          <p class="text-body1">
-            parser description goes here
-          </p>
+          <p class="text-body1">parser description goes here</p>
         </q-card-section>
 
         <q-separator />
@@ -23,9 +21,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: 'AboutPage',
+  name: "AboutPage",
 });
 </script>

@@ -117,13 +117,13 @@
                   <div class="text-subtitle2">Select text format to parse</div>
                 </div>
                 <div class="col-12">
-                <q-option-group
-                  v-model="textFormat"
-                  :options="textFormatOptions"
-                  type="radio"
-                  inline
-                />
-               </div>
+                  <q-option-group
+                    v-model="textFormat"
+                    :options="textFormatOptions"
+                    type="radio"
+                    inline
+                  />
+                </div>
               </div>
             </q-tab-panel>
           </q-tab-panels>
@@ -231,7 +231,11 @@ export default defineComponent({
       this.disableUpload = false;
       for (const file of this.uploadedFiles) {
         if (!extension.test(file.name)) {
-          notifyMessage(`You have to upload .conllu or .txt file`, 5000, "warning");
+          notifyMessage(
+            `You have to upload .conllu or .txt file`,
+            5000,
+            "warning",
+          );
           this.disableUpload = true;
           return;
         }

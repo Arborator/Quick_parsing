@@ -9,16 +9,27 @@
             Parsing Results
           </div>
         </q-card-section>
-                <q-card-section class="row justify-start">
-          <q-btn flat icon="arrow_back" label="Back" @click="$router.back()" class="q-mb-md" />
+        <q-card-section class="row justify-start">
+          <q-btn
+            flat
+            icon="arrow_back"
+            label="Back"
+            @click="$router.back()"
+            class="q-mb-md"
+          />
         </q-card-section>
 
         <q-card-section class="q-pa-sm">
-          <ResultView v-if="parsedSamples && Object.keys(parsedSamples).length > 0" :parsedSamples="parsedSamples" />
+          <ResultView
+            v-if="parsedSamples && Object.keys(parsedSamples).length > 0"
+            :parsedSamples="parsedSamples"
+          />
           <div v-else class="row justify-center">
             <q-card flat bordered class="col-12">
               <q-card-section>
-                <div class="text-h6 text-center text-grey">No results available</div>
+                <div class="text-h6 text-center text-grey">
+                  No results available
+                </div>
               </q-card-section>
             </q-card>
           </div>
@@ -31,11 +42,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import ResultView from 'src/components/ResultView.vue';
+import { defineComponent } from "vue";
+import ResultView from "src/components/ResultView.vue";
 
 export default defineComponent({
-  name: 'ResultsPage',
+  name: "ResultsPage",
   components: {
     ResultView,
   },
