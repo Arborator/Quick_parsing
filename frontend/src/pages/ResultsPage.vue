@@ -23,7 +23,6 @@
           <ResultView
             v-if="parsedSamples && Object.keys(parsedSamples).length > 0"
             :parsedSamples="parsedSamples"
-            :fullWidth="true"
           />
           <div v-else class="row justify-center">
             <q-card flat bordered class="col-12">
