@@ -368,7 +368,6 @@ export default defineComponent({
                 "negative",
               );
             } else {
-              notifyMessage("Sentences parsing started", 10000, "positive");
               try {
                 this.inProgressNotify = notifyMessage("Parsing in progress...", 0, "info");
               } catch (e) {
@@ -407,7 +406,6 @@ export default defineComponent({
               "negative",
             );
           } else {
-            notifyMessage("Sentences parsing started", 10000, "positive");
             try {
               this.inProgressNotify = notifyMessage("Parsing in progress...", 0, "info");
             } catch (e) {
@@ -436,6 +434,7 @@ export default defineComponent({
             notifyMessage(response.data.error, 10000, "negative");
             this.clearCurrentTask();
           } else if (response.data.data.ready) {
+            this.clearCurrentTask();
             if (this.inProgressNotify) {
               try { this.inProgressNotify(); } catch (e) {}
               this.inProgressNotify = null;
@@ -447,6 +446,7 @@ export default defineComponent({
             Date.now() - this.taskTimeStarted >
             TIMEOUT_TASK_STATUS_CHECKER
           ) {
+            this.clearCurrentTask();
             if (this.inProgressNotify) {
               try { this.inProgressNotify(); } catch (e) {}
               this.inProgressNotify = null;
@@ -463,6 +463,7 @@ export default defineComponent({
             this.inProgressNotify = null;
           }
           notifyMessage(error, 10000, "negative");
+          this.clearCurrentTask();
         });
     },
     clearCurrentTask() {

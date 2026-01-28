@@ -74,6 +74,7 @@ export default defineComponent({
       const stored = localStorage.getItem('parsedSamples');
       if (stored) {
         this.parsedSamples = JSON.parse(stored);
+        localStorage.removeItem('parsedSamples');
       }
     } catch (e) {
         console.warn('Failed to access localStorage for parsedSamples', e);
