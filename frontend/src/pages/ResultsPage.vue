@@ -18,8 +18,11 @@
             class="q-mb-md"
           />
         </q-card-section>
-
-        <q-card-section class="q-pa-sm">
+      </q-card>
+    </div>
+  </div>
+  <div class="justify-center">
+    <q-card-section class="q-pa-sm">
           <ResultView
             v-if="parsedSamples && Object.keys(parsedSamples).length > 0"
             :parsedSamples="parsedSamples"
@@ -33,11 +36,8 @@
               </q-card-section>
             </q-card>
           </div>
-        </q-card-section>
-
-        <q-separator />
-      </q-card>
-    </div>
+    </q-card-section>
+    <q-separator />
   </div>
 </template>
 
