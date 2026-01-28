@@ -93,7 +93,8 @@
               <q-file
                 ref="fileInput"
                 :model-value="uploadedFiles"
-                label="Attach one or multiple files"
+                label="Attach one or multiple files (.conllu, .txt)"
+                accept=".conllu,.txt"
                 use-chips
                 outlined
                 multiple
@@ -226,11 +227,11 @@ export default defineComponent({
   },
   methods: {
     async checkExtension() {
-      const extension = /^.*\.(conllu)$/;
+      const extension = /^.*\.(conllu|txt)$/i;
       this.disableUpload = false;
       for (const file of this.uploadedFiles) {
         if (!extension.test(file.name)) {
-          notifyMessage(`You have to upload Conll file`, 5000, "warning");
+          notifyMessage(`You have to upload .conllu or .txt file`, 5000, "warning");
           this.disableUpload = true;
           return;
         }
