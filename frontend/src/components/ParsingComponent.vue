@@ -303,7 +303,11 @@ export default defineComponent({
         );
       } finally {
         this.filteredModels = this.availableModels;
-        console.log("Available models:", this.availableModels);
+        try {
+          this.saveParsingInputs();
+        } catch (e) {
+          notifyMessage('Failed to save previous parsing inputs', 5000, 'warning');
+        }
       }
     },
     filterModels(val: string, update: (callback: () => void) => void) {
@@ -331,7 +335,20 @@ export default defineComponent({
       }
       return text;
     },
-    startParsing() {
+    async startParsing() {
+      try {
+        const payload = {
+          parsingOption: this.parsingOption,
+          textToParse: this.textToParse,
+          textFormat: this.textFormat,
+          columnsToKeep: this.columnsToKeep,
+          parserValue: this.parser?.value || null,
+          uploadedFiles: (this.uploadedFiles || []).map((f: File) => f.name),
+        };
+        sessionStorage.setItem("parsingInputs", JSON.stringify(payload));
+      } catch (e) {
+        notifyMessage("Failed to store parsing inputs locally; continuing parsing",5000,"warning");
+      }
       const parsingSettings: ParsingSettings_t = {
         keep_heads: this.columnsToKeep.includes("HEAD") ? "EXISTING" : "NONE",
         keep_upos: this.columnsToKeep.includes("UPOS") ? "EXISTING" : "NONE",
@@ -512,6 +529,49 @@ export default defineComponent({
         (f) => !(f.name === file.name),
       );
       this.checkExtension();
+    },
+
+    saveParsingInputs() {
+      try {
+        const raw = sessionStorage.getItem("parsingInputs");
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        if (!state) return;
+        if (state.parsingOption) this.parsingOption = state.parsingOption;
+        if (state.textToParse) this.textToParse = state.textToParse;
+        if (state.textFormat) this.textFormat = state.textFormat;
+        if (state.columnsToKeep) this.columnsToKeep = state.columnsToKeep;
+        if (state.parserValue) {
+          const found = (this.availableModels || []).find((m: any) => {
+            try {
+              return JSON.stringify(m.value) === JSON.stringify(state.parserValue);
+            } catch (e) {
+              return m.label === state.parserValue?.model_info?.project_name;
+            }
+          });
+          if (found) this.parser = found;
+        }
+        if (Array.isArray(state.uploadedFiles) && state.uploadedFiles.length > 0) {
+          const first = state.uploadedFiles[0];
+          if (typeof first === "string") {
+            this.uploadedFiles = [];
+          } else {
+            const recreated: File[] = [];
+            for (const sf of state.uploadedFiles) {
+              try {
+                const blob = new Blob([sf.content], { type: sf.type || "text/plain" });
+                const f = new File([blob], sf.name, { type: sf.type || "text/plain" });
+                recreated.push(f);
+              } catch (e) {
+                notifyMessage('Failed to restore one of the uploaded files', 5000, 'warning');
+              }
+            }
+            this.uploadedFiles = recreated;
+          }
+        }
+      } catch (e) {
+        notifyMessage('Failed to restore previous parsing inputs', 5000, 'warning');
+      }
     },
   },
 });

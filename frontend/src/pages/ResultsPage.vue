@@ -71,13 +71,12 @@ export default defineComponent({
     }
 
     try {
-      const stored = localStorage.getItem('parsedSamples');
+      const stored = sessionStorage.getItem('parsedSamples');
       if (stored) {
         this.parsedSamples = JSON.parse(stored);
-        localStorage.removeItem('parsedSamples');
       }
     } catch (e) {
-        console.warn('Failed to access localStorage for parsedSamples', e);
+        console.warn('Failed to access sessionStorage for parsedSamples', e);
         notifyMessage('Could not retrieve stored parsing results', 5000, 'warning');
     }
   },

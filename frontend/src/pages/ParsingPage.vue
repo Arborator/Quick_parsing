@@ -17,10 +17,10 @@ export default defineComponent({
   methods: {
     handleParsing(samples: any) {
       try {
-        localStorage.setItem('parsedSamples', JSON.stringify(samples));
+        sessionStorage.setItem('parsedSamples', JSON.stringify(samples));
       } catch (e: any) {
-        console.warn('Failed to save parsedSamples to localStorage', e);
-        notifyMessage('Failed to persist results locally; continuing navigation', 5000, 'warning');
+        console.warn('Failed to save parsedSamples to sessionStorage', e);
+        notifyMessage('Failed to store results locally; continuing navigation', 5000, 'warning');
       }
       this.$router.push({ name: 'results' });
     },
