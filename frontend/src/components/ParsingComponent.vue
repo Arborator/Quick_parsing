@@ -160,13 +160,18 @@
         </q-card-section>
 
         <q-card-section class="row justify-center">
-          <q-btn
-            class="bg-secondary text-white text-bold q-my-sm"
-            no-caps
-            :disable="disableParseBtn"
-            label="PARSE THE INPUT"
-            @click="startParsing"
-          />
+          <div class="row items-center q-gutter-sm">
+            <div class="col-auto text-subtitle2 q-mr-md" v-if="parsingSentencesEstimate > 0">
+              Estimated parse time: <strong>{{ estimatedParsingTimeMinutes() }}</strong> mn
+            </div>
+            <q-btn
+              class="bg-secondary text-white text-bold q-my-sm"
+              no-caps
+              :disable="disableParseBtn"
+              label="PARSE THE INPUT"
+              @click="startParsing"
+            />
+          </div>
         </q-card-section>
         <q-separator />
       </q-card>
@@ -181,6 +186,7 @@ import { defineComponent } from "vue";
 
 const TIMEOUT_TASK_STATUS_CHECKER = 1000 * 60 * 60 * 3; // 3 hours
 const REFRESH_RATE_TASK_STATUS_CHECKER = 1000 * 10; // 10 seconds
+const KIR_PARSER_SENT_PER_SEC_SPEED = 140; 
 
 export default defineComponent({
   name: "ParsingComponent",
@@ -203,6 +209,7 @@ export default defineComponent({
     const parsedSamples: { [key: string]: string } = {};
     return {
       uploadedFiles,
+      parsingSentencesEstimate: 0,
       textToParse,
       parser,
       parsingOption: "file",
@@ -238,6 +245,18 @@ export default defineComponent({
   },
   mounted() {
     this.getModels();
+    this.EstimatedSentences();
+  },
+  watch: {
+    uploadedFiles() {
+      this.EstimatedSentences();
+    },
+    textToParse() {
+      this.EstimatedSentences();
+    },
+    parsingOption() {
+      this.EstimatedSentences();
+    },
   },
   methods: {
     async checkExtension() {
@@ -386,7 +405,7 @@ export default defineComponent({
               );
             } else {
               try {
-                this.inProgressNotify = notifyMessage("Parsing in progress...", 0, "info");
+                this.inProgressNotify = notifyMessage("Parsing in progress... Don't reload the page", 0, "info");
               } catch (e) {
                 this.inProgressNotify = null;
               }
@@ -424,7 +443,7 @@ export default defineComponent({
             );
           } else {
             try {
-              this.inProgressNotify = notifyMessage("Parsing in progress...", 0, "info");
+              this.inProgressNotify = notifyMessage("Parsing in progress... Don't reload the page", 0, "info");
             } catch (e) {
               this.inProgressNotify = null;
             }
@@ -458,7 +477,7 @@ export default defineComponent({
             }
             this.parsedSamples = response.data.data.parsed_samples;
             this.$emit("get-parsing", this.parsedSamples);
-            notifyMessage("Sentences parsing ended!", 0, "positive");
+            notifyMessage("Sentences parsing ended!", 3000, "positive");
           } else if (
             Date.now() - this.taskTimeStarted >
             TIMEOUT_TASK_STATUS_CHECKER
@@ -531,6 +550,48 @@ export default defineComponent({
       this.checkExtension();
     },
 
+    async EstimatedSentences() {
+      try {
+        let total = 0;
+        if (this.parsingOption === 'file' && this.uploadedFiles && this.uploadedFiles.length > 0) {
+          const readFile = (this.uploadedFiles || []).map((f: File) => {
+            return new Promise<string>((resolve) => {
+              const read = new FileReader();
+              read.onload = () => resolve(String(read.result || ''));
+              read.onerror = () => resolve('');
+              read.readAsText(f);
+            });
+          });
+          const contents = await Promise.all(readFile);
+          for (const [i, content] of contents.entries()) {
+            const file = this.uploadedFiles[i];
+            const name = file?.name || '';
+            if (/\.conllu$/i.test(name)) {
+              const blocks = content.split(/\n\s*\n+/).filter((b) => b.trim().length > 0);
+              total += blocks.length;
+            } else {
+              const sent = content.split(/[\.\!\?]+\s+/).filter((s) => s.trim().length > 0);
+              total += sent.length;
+            }
+          }
+        } else if (this.parsingOption === 'text' && (this.textToParse || '').trim().length > 0) {
+          const text = this.textToParse;
+          const sent = text.split(/[\.\!\?]+\s+/).filter((s) => s.trim().length > 0);
+          total = sent.length || 1;
+        }
+        this.parsingSentencesEstimate = total;
+      } catch (e) {
+        this.parsingSentencesEstimate = 0;
+      }
+    },
+
+    estimatedParsingTimeMinutes() {
+      const init_s = 60;
+      const parsingEstimatedTime_s = this.parsingSentencesEstimate / KIR_PARSER_SENT_PER_SEC_SPEED;
+      const total_s = init_s + parsingEstimatedTime_s;
+      return Math.max(0, Math.ceil(total_s / 60));
+    },
+
     saveParsingInputs() {
       try {
         const raw = sessionStorage.getItem("parsingInputs");
@@ -554,7 +615,12 @@ export default defineComponent({
         if (Array.isArray(state.uploadedFiles) && state.uploadedFiles.length > 0) {
           const first = state.uploadedFiles[0];
           if (typeof first === "string") {
-            this.uploadedFiles = [];
+            try {
+              const filename: File[] = state.uploadedFiles.map((name: string) => new File([""], name, { type: "text/plain" }));
+              this.uploadedFiles = filename;
+            } catch (e) {
+              this.uploadedFiles = [];
+            }
           } else {
             const recreated: File[] = [];
             for (const sf of state.uploadedFiles) {
