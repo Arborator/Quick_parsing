@@ -1,5 +1,5 @@
 <template>
-  <div class="row justify-center q-mt-lg">
+  <div class="row justify-center">
     <div class="col-12 col-sm-10 col-md-8 col-lg-6">
       <q-card flat class="q-pa-md">
         <q-separator />
@@ -93,7 +93,8 @@
               <q-file
                 ref="fileInput"
                 :model-value="uploadedFiles"
-                label="Attach one or multiple files"
+                label="Attach one or multiple files (.conllu, .txt)"
+                accept=".conllu,.txt"
                 use-chips
                 outlined
                 multiple
@@ -116,18 +117,30 @@
                   <div class="text-subtitle2">Select text format to parse</div>
                 </div>
                 <div class="col-12">
-                <q-option-group
-                  v-model="textFormat"
-                  :options="textFormatOptions"
-                  type="radio"
-                  inline
-                />
-               </div>
+                  <q-option-group
+                    v-model="textFormat"
+                    :options="textFormatOptions"
+                    type="radio"
+                    inline
+                  />
+                </div>
               </div>
             </q-tab-panel>
           </q-tab-panels>
         </q-card-section>
+
         <q-card-section v-if="parsingOption !== 'text'" class="q-pa-sm">
+          <q-btn
+            flat
+            dense
+            :icon="showAdvanced ? 'expand_less' : 'expand_more'"
+            :label="showAdvanced ? 'Hide Advanced Settings' : 'Show Advanced Settings'"
+            @click="showAdvanced = !showAdvanced"
+            class="text-primary text-bold"
+          />
+        </q-card-section>
+
+        <q-card-section v-if="parsingOption !== 'text' && showAdvanced" class="q-pa-sm bg-grey-1">
           <div class="row items-center q-gutter-sm">
             <div class="col-12">
               <div class="text-subtitle2">
@@ -147,13 +160,18 @@
         </q-card-section>
 
         <q-card-section class="row justify-center">
-          <q-btn
-            class="bg-secondary text-white text-bold q-my-sm"
-            no-caps
-            :disable="disableParseBtn"
-            label="PARSE THE INPUT"
-            @click="startParsing"
-          />
+          <div class="row items-center q-gutter-sm">
+            <div class="col-auto text-subtitle2 q-mr-md" v-if="parsingSentencesEstimate > 0">
+              Estimated parse time: <strong>{{ estimatedParsingTimeMinutes() }}</strong> mn
+            </div>
+            <q-btn
+              class="bg-secondary text-white text-bold q-my-sm"
+              no-caps
+              :disable="disableParseBtn"
+              label="PARSE THE INPUT"
+              @click="startParsing"
+            />
+          </div>
         </q-card-section>
         <q-separator />
       </q-card>
@@ -168,6 +186,7 @@ import { defineComponent } from "vue";
 
 const TIMEOUT_TASK_STATUS_CHECKER = 1000 * 60 * 60 * 3; // 3 hours
 const REFRESH_RATE_TASK_STATUS_CHECKER = 1000 * 10; // 10 seconds
+const KIR_PARSER_SENT_PER_SEC_SPEED = 140; 
 
 export default defineComponent({
   name: "ParsingComponent",
@@ -190,6 +209,7 @@ export default defineComponent({
     const parsedSamples: { [key: string]: string } = {};
     return {
       uploadedFiles,
+      parsingSentencesEstimate: 0,
       textToParse,
       parser,
       parsingOption: "file",
@@ -207,10 +227,12 @@ export default defineComponent({
       taskTimeStarted,
       parsedSamples,
       disableUpload: false,
+      showAdvanced: false,
       taskIntervalChecker: null as
         | null
         | ReturnType<typeof setTimeout>
         | ReturnType<typeof setInterval>,
+      inProgressNotify: null as null | (() => void),
     };
   },
   computed: {
@@ -223,14 +245,30 @@ export default defineComponent({
   },
   mounted() {
     this.getModels();
+    this.EstimatedSentences();
+  },
+  watch: {
+    uploadedFiles() {
+      this.EstimatedSentences();
+    },
+    textToParse() {
+      this.EstimatedSentences();
+    },
+    parsingOption() {
+      this.EstimatedSentences();
+    },
   },
   methods: {
     async checkExtension() {
-      const extension = /^.*\.(conllu)$/;
+      const extension = /^.*\.(conllu|txt)$/i;
       this.disableUpload = false;
       for (const file of this.uploadedFiles) {
         if (!extension.test(file.name)) {
-          notifyMessage(`You have to upload Conll file`, 5000, "warning");
+          notifyMessage(
+            `You have to upload .conllu or .txt file`,
+            5000,
+            "warning",
+          );
           this.disableUpload = true;
           return;
         }
@@ -284,7 +322,11 @@ export default defineComponent({
         );
       } finally {
         this.filteredModels = this.availableModels;
-        console.log("Available models:", this.availableModels);
+        try {
+          this.saveParsingInputs();
+        } catch (e) {
+          notifyMessage('Failed to save previous parsing inputs', 5000, 'warning');
+        }
       }
     },
     filterModels(val: string, update: (callback: () => void) => void) {
@@ -312,7 +354,20 @@ export default defineComponent({
       }
       return text;
     },
-    startParsing() {
+    async startParsing() {
+      try {
+        const payload = {
+          parsingOption: this.parsingOption,
+          textToParse: this.textToParse,
+          textFormat: this.textFormat,
+          columnsToKeep: this.columnsToKeep,
+          parserValue: this.parser?.value || null,
+          uploadedFiles: (this.uploadedFiles || []).map((f: File) => f.name),
+        };
+        sessionStorage.setItem("parsingInputs", JSON.stringify(payload));
+      } catch (e) {
+        notifyMessage("Failed to store parsing inputs locally; continuing parsing",5000,"warning");
+      }
       const parsingSettings: ParsingSettings_t = {
         keep_heads: this.columnsToKeep.includes("HEAD") ? "EXISTING" : "NONE",
         keep_upos: this.columnsToKeep.includes("UPOS") ? "EXISTING" : "NONE",
@@ -349,7 +404,11 @@ export default defineComponent({
                 "negative",
               );
             } else {
-              notifyMessage("Sentences parsing started", 10000, "positive");
+              try {
+                this.inProgressNotify = notifyMessage("Parsing in progress... Don't reload the page", 0, "info");
+              } catch (e) {
+                this.inProgressNotify = null;
+              }
               const parseTaskId = response.data.data.parse_task_id;
               this.taskIntervalChecker = setInterval(() => {
                 setTimeout(this.checkParserStatus(parseTaskId) as any, 10);
@@ -383,7 +442,11 @@ export default defineComponent({
               "negative",
             );
           } else {
-            notifyMessage("Sentences parsing started", 10000, "positive");
+            try {
+              this.inProgressNotify = notifyMessage("Parsing in progress... Don't reload the page", 0, "info");
+            } catch (e) {
+              this.inProgressNotify = null;
+            }
             const parseTaskId = response.data.data.parse_task_id;
             this.taskIntervalChecker = setInterval(() => {
               setTimeout(this.checkParserStatus(parseTaskId) as any, 10);
@@ -400,18 +463,30 @@ export default defineComponent({
         .parserParseStatus(data)
         .then((response) => {
           if (response.data.status === "failure") {
+            if (this.inProgressNotify) {
+              try { this.inProgressNotify(); } catch (e) {}
+              this.inProgressNotify = null;
+            }
             notifyMessage(response.data.error, 10000, "negative");
             this.clearCurrentTask();
           } else if (response.data.data.ready) {
             this.clearCurrentTask();
+            if (this.inProgressNotify) {
+              try { this.inProgressNotify(); } catch (e) {}
+              this.inProgressNotify = null;
+            }
             this.parsedSamples = response.data.data.parsed_samples;
             this.$emit("get-parsing", this.parsedSamples);
-            notifyMessage("Sentences parsing ended!", 0, "positive");
+            notifyMessage("Sentences parsing ended!", 3000, "positive");
           } else if (
             Date.now() - this.taskTimeStarted >
             TIMEOUT_TASK_STATUS_CHECKER
           ) {
             this.clearCurrentTask();
+            if (this.inProgressNotify) {
+              try { this.inProgressNotify(); } catch (e) {}
+              this.inProgressNotify = null;
+            }
           } else if (taskId === "PARSING") {
             window.onbeforeunload = function () {
               return "You have already started parsing, if you leave the page the changes will not be saved";
@@ -419,6 +494,10 @@ export default defineComponent({
           }
         })
         .catch((error) => {
+          if (this.inProgressNotify) {
+            try { this.inProgressNotify(); } catch (e) {}
+            this.inProgressNotify = null;
+          }
           notifyMessage(error, 10000, "negative");
           this.clearCurrentTask();
         });
@@ -469,6 +548,96 @@ export default defineComponent({
         (f) => !(f.name === file.name),
       );
       this.checkExtension();
+    },
+
+    async EstimatedSentences() {
+      try {
+        let total = 0;
+        if (this.parsingOption === 'file' && this.uploadedFiles && this.uploadedFiles.length > 0) {
+          const readFile = (this.uploadedFiles || []).map((f: File) => {
+            return new Promise<string>((resolve) => {
+              const read = new FileReader();
+              read.onload = () => resolve(String(read.result || ''));
+              read.onerror = () => resolve('');
+              read.readAsText(f);
+            });
+          });
+          const contents = await Promise.all(readFile);
+          for (const [i, content] of contents.entries()) {
+            const file = this.uploadedFiles[i];
+            const name = file?.name || '';
+            if (/\.conllu$/i.test(name)) {
+              const blocks = content.split(/\n\s*\n+/).filter((b) => b.trim().length > 0);
+              total += blocks.length;
+            } else {
+              const sent = content.split(/[\.\!\?]+\s+/).filter((s) => s.trim().length > 0);
+              total += sent.length;
+            }
+          }
+        } else if (this.parsingOption === 'text' && (this.textToParse || '').trim().length > 0) {
+          const text = this.textToParse;
+          const sent = text.split(/[\.\!\?]+\s+/).filter((s) => s.trim().length > 0);
+          total = sent.length || 1;
+        }
+        this.parsingSentencesEstimate = total;
+      } catch (e) {
+        this.parsingSentencesEstimate = 0;
+      }
+    },
+
+    estimatedParsingTimeMinutes() {
+      const init_s = 60;
+      const parsingEstimatedTime_s = this.parsingSentencesEstimate / KIR_PARSER_SENT_PER_SEC_SPEED;
+      const total_s = init_s + parsingEstimatedTime_s;
+      return Math.max(0, Math.ceil(total_s / 60));
+    },
+
+    saveParsingInputs() {
+      try {
+        const raw = sessionStorage.getItem("parsingInputs");
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        if (!state) return;
+        if (state.parsingOption) this.parsingOption = state.parsingOption;
+        if (state.textToParse) this.textToParse = state.textToParse;
+        if (state.textFormat) this.textFormat = state.textFormat;
+        if (state.columnsToKeep) this.columnsToKeep = state.columnsToKeep;
+        if (state.parserValue) {
+          const found = (this.availableModels || []).find((m: any) => {
+            try {
+              return JSON.stringify(m.value) === JSON.stringify(state.parserValue);
+            } catch (e) {
+              return m.label === state.parserValue?.model_info?.project_name;
+            }
+          });
+          if (found) this.parser = found;
+        }
+        if (Array.isArray(state.uploadedFiles) && state.uploadedFiles.length > 0) {
+          const first = state.uploadedFiles[0];
+          if (typeof first === "string") {
+            try {
+              const filename: File[] = state.uploadedFiles.map((name: string) => new File([""], name, { type: "text/plain" }));
+              this.uploadedFiles = filename;
+            } catch (e) {
+              this.uploadedFiles = [];
+            }
+          } else {
+            const recreated: File[] = [];
+            for (const sf of state.uploadedFiles) {
+              try {
+                const blob = new Blob([sf.content], { type: sf.type || "text/plain" });
+                const f = new File([blob], sf.name, { type: sf.type || "text/plain" });
+                recreated.push(f);
+              } catch (e) {
+                notifyMessage('Failed to restore one of the uploaded files', 5000, 'warning');
+              }
+            }
+            this.uploadedFiles = recreated;
+          }
+        }
+      } catch (e) {
+        notifyMessage('Failed to restore previous parsing inputs', 5000, 'warning');
+      }
     },
   },
 });
