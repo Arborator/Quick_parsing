@@ -480,40 +480,61 @@ export default defineComponent({
       }
 
       if (this.parsingOption === "text-file") {
-        const form = new FormData();
-        for (const file of this.uploadedTextFiles) {
-          form.append("files", file);
-        }
-        form.append("text_to_parse", "");
-        form.append("text_format", this.textFileFormat);
-        form.append("model", JSON.stringify(this.parser.value));
-        form.append("parsingSettings", JSON.stringify(parsingSettings));
+        const readFiles = (this.uploadedTextFiles || []).map((f: File) => {
+          return new Promise<string>((resolve) => {
+            const read = new FileReader();
+            read.onload = () => resolve(String(read.result || ''));
+            read.onerror = () => resolve('');
+            read.readAsText(f);
+          });
+        });
 
-        this.taskTimeStarted = Date.now();
-
-        api
-          .parserParseStart(form)
-          .then((response) => {
-            if (response.data.status === "failure") {
-              notifyMessage(
-                "Parsing could not start : " + response.data.error,
-                10000,
-                "negative",
-              );
-            } else {
-              try {
-                this.inProgressNotify = notifyMessage("Parsing in progress... Don't reload the page", 0, "info");
-              } catch (e) {
-                this.inProgressNotify = null;
-              }
-              const parseTaskId = response.data.data.parse_task_id;
-              this.taskIntervalChecker = setInterval(() => {
-                setTimeout(this.checkParserStatus(parseTaskId) as any, 10);
-              }, REFRESH_RATE_TASK_STATUS_CHECKER);
+        Promise.all(readFiles)
+          .then((fileContents) => {
+            let combinedText = fileContents.join('\n\n');
+            combinedText = this.safeNormalize(combinedText);
+            combinedText = combinedText.replace(/\r/g, "");
+            
+            if (this.textFileFormat === "vertical") {
+              combinedText = combinedText.replace(/\n{3,}/g, "\n\n");
+              if (!combinedText.endsWith("\n\n")) combinedText = combinedText + "\n\n";
             }
+
+            const payload = {
+              text: combinedText,
+              option: this.textFileFormat,
+              model: this.parser?.value || this.parser,
+              parsingSettings,
+            };
+
+            this.taskTimeStarted = Date.now();
+            api
+              .parserParseStart(payload)
+              .then((response) => {
+                if (response.data.status === "failure") {
+                  notifyMessage(
+                    "Parsing could not start : " + response.data.error,
+                    10000,
+                    "negative",
+                  );
+                } else {
+                  try {
+                    this.inProgressNotify = notifyMessage("Parsing in progress... Don't reload the page", 0, "info");
+                  } catch (e) {
+                    this.inProgressNotify = null;
+                  }
+                  const parseTaskId = response.data.data.parse_task_id;
+                  this.taskIntervalChecker = setInterval(() => {
+                    setTimeout(this.checkParserStatus(parseTaskId) as any, 10);
+                  }, REFRESH_RATE_TASK_STATUS_CHECKER);
+                }
+              })
+              .catch((error) => {
+                notifyMessage(error, 10000, "negative");
+              });
           })
           .catch((error) => {
-            notifyMessage(error, 10000, "negative");
+            notifyMessage("Failed to read text files: " + error, 10000, "negative");
           });
         return;
       }
