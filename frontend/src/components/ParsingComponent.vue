@@ -79,6 +79,15 @@
               </div>
             </q-tab>
             <q-tab
+              :class="parsingOption === 'text-file' ? 'text-primary' : 'text-grey-6'"
+              name="text-file"
+            >
+              <div>
+                <q-icon name="text_snippet" size="20px" class="q-mb-xs" />
+                <div class="text-subtitle2">Text file</div>
+              </div>
+            </q-tab>
+            <q-tab
               :class="parsingOption === 'text' ? 'text-primary' : 'text-grey-6'"
               name="text"
             >
@@ -93,8 +102,8 @@
               <q-file
                 ref="fileInput"
                 :model-value="uploadedFiles"
-                label="Attach one or multiple files (.conllu, .txt)"
-                accept=".conllu,.txt"
+                label="Attach one or multiple files (.conllu)"
+                accept=".conllu"
                 use-chips
                 outlined
                 multiple
@@ -103,7 +112,35 @@
                 @remove="fileRemoved"
               >
               </q-file>
-            </q-tab-panel>
+            </q-tab-panel>           
+             <q-tab-panel name="text-file" class="q-gutter-md">
+              <q-file
+                ref="textFileInput"
+                :model-value="uploadedTextFiles"
+                label="Attach one or multiple text files (.txt)"
+                accept=".txt"
+                use-chips
+                outlined
+                multiple
+                input-style="height:100px"
+                @update:model-value="textFileInputUpdate"
+                @remove="textFileRemoved"
+              >
+              </q-file>
+              <div class="row items-center q-gutter-sm q-mt-md">
+                <div class="col-12">
+                  <div class="text-subtitle2">Select text format to parse</div>
+                </div>
+                <div class="col-12">
+                  <q-option-group
+                    v-model="textFileFormat"
+                    :options="textFormatOptions"
+                    type="radio"
+                    inline
+                  />
+                </div>
+              </div>
+            </q-tab-panel>            
             <q-tab-panel name="text" class="q-gutter-md">
               <q-input
                 outlined
@@ -129,7 +166,7 @@
           </q-tab-panels>
         </q-card-section>
 
-        <q-card-section v-if="parsingOption !== 'text'" class="q-pa-sm">
+        <q-card-section v-if="parsingOption === 'file'" class="q-pa-sm">
           <q-btn
             flat
             dense
@@ -192,6 +229,7 @@ export default defineComponent({
   name: "ParsingComponent",
   data() {
     const uploadedFiles: File[] = [];
+    const uploadedTextFiles: File[] = [];
     const textToParse: string = "";
     const parser: any = null;
     const taskTimeStarted: number = 0;
@@ -209,6 +247,7 @@ export default defineComponent({
     const parsedSamples: { [key: string]: string } = {};
     return {
       uploadedFiles,
+      uploadedTextFiles,
       parsingSentencesEstimate: 0,
       textToParse,
       parser,
@@ -220,6 +259,7 @@ export default defineComponent({
         { label: "Horizontal", value: "horizontal" },
       ],
       textFormat: "plainText",
+      textFileFormat: "plainText",
       availableModels,
       filteredModels,
       columnsToKeep,
@@ -239,6 +279,7 @@ export default defineComponent({
     disableParseBtn() {
       if (this.parser === null || this.disableUpload) return true;
       if (this.parsingOption === "file") return this.uploadedFiles.length === 0;
+      if (this.parsingOption === "text-file") return this.uploadedTextFiles.length === 0;
       if (this.parsingOption === "text") return this.textToParse.trim() === "";
       return true;
     },
@@ -251,6 +292,9 @@ export default defineComponent({
     uploadedFiles() {
       this.EstimatedSentences();
     },
+    uploadedTextFiles() {
+      this.EstimatedSentences();
+    },
     textToParse() {
       this.EstimatedSentences();
     },
@@ -260,12 +304,24 @@ export default defineComponent({
   },
   methods: {
     async checkExtension() {
-      const extension = /^.*\.(conllu|txt)$/i;
+      const conlluExtension = /^.*\.conllu$/i;
+      const txtExtension = /^.*\.txt$/i;
       this.disableUpload = false;
       for (const file of this.uploadedFiles) {
-        if (!extension.test(file.name)) {
+        if (!conlluExtension.test(file.name)) {
           notifyMessage(
-            `You have to upload .conllu or .txt file`,
+            `You have to upload .conllu file`,
+            5000,
+            "warning",
+          );
+          this.disableUpload = true;
+          return;
+        }
+      }
+      for (const file of this.uploadedTextFiles) {
+        if (!txtExtension.test(file.name)) {
+          notifyMessage(
+            `You have to upload .txt file`,
             5000,
             "warning",
           );
@@ -360,9 +416,11 @@ export default defineComponent({
           parsingOption: this.parsingOption,
           textToParse: this.textToParse,
           textFormat: this.textFormat,
+          textFileFormat: this.textFileFormat,
           columnsToKeep: this.columnsToKeep,
           parserValue: this.parser?.value || null,
           uploadedFiles: (this.uploadedFiles || []).map((f: File) => f.name),
+          uploadedTextFiles: (this.uploadedTextFiles || []).map((f: File) => f.name),
         };
         sessionStorage.setItem("parsingInputs", JSON.stringify(payload));
       } catch (e) {
@@ -396,6 +454,45 @@ export default defineComponent({
         this.taskTimeStarted = Date.now();
         api
           .parserParseStart(payload)
+          .then((response) => {
+            if (response.data.status === "failure") {
+              notifyMessage(
+                "Parsing could not start : " + response.data.error,
+                10000,
+                "negative",
+              );
+            } else {
+              try {
+                this.inProgressNotify = notifyMessage("Parsing in progress... Don't reload the page", 0, "info");
+              } catch (e) {
+                this.inProgressNotify = null;
+              }
+              const parseTaskId = response.data.data.parse_task_id;
+              this.taskIntervalChecker = setInterval(() => {
+                setTimeout(this.checkParserStatus(parseTaskId) as any, 10);
+              }, REFRESH_RATE_TASK_STATUS_CHECKER);
+            }
+          })
+          .catch((error) => {
+            notifyMessage(error, 10000, "negative");
+          });
+        return;
+      }
+
+      if (this.parsingOption === "text-file") {
+        const form = new FormData();
+        for (const file of this.uploadedTextFiles) {
+          form.append("files", file);
+        }
+        form.append("text_to_parse", "");
+        form.append("text_format", this.textFileFormat);
+        form.append("model", JSON.stringify(this.parser.value));
+        form.append("parsingSettings", JSON.stringify(parsingSettings));
+
+        this.taskTimeStarted = Date.now();
+
+        api
+          .parserParseStart(form)
           .then((response) => {
             if (response.data.status === "failure") {
               notifyMessage(
@@ -550,6 +647,48 @@ export default defineComponent({
       this.checkExtension();
     },
 
+    textFileInputUpdate(newFile: FileList | File[] | File | null) {
+      const toArray = (f: any): File[] =>
+        !f
+          ? []
+          : typeof FileList !== "undefined" && f instanceof FileList
+            ? Array.from(f)
+            : Array.isArray(f)
+              ? f
+              : [f];
+
+      const income = toArray(newFile);
+      const exist: File[] = this.uploadedTextFiles || [];
+
+      if (income.length < exist.length) {
+        this.uploadedTextFiles = income;
+      } else {
+        const present = exist.slice();
+        for (const f of income) {
+          if (!present.some((e) => e.name === f.name)) {
+            present.push(f);
+          }
+        }
+        this.uploadedTextFiles = present;
+      }
+
+      this.checkExtension();
+
+      const refComp: any = this.$refs.textFileInput;
+      if (refComp && typeof refComp.reset === "function") refComp.reset();
+      else if (refComp && refComp.$el) {
+        const input = refComp.$el.querySelector("input[type=file]");
+        if (input) input.value = "";
+      }
+    },
+
+    textFileRemoved(file: File) {
+      this.uploadedTextFiles = (this.uploadedTextFiles || []).filter(
+        (f) => !(f.name === file.name),
+      );
+      this.checkExtension();
+    },
+
     async EstimatedSentences() {
       try {
         let total = 0;
@@ -569,10 +708,21 @@ export default defineComponent({
             if (/\.conllu$/i.test(name)) {
               const blocks = content.split(/\n\s*\n+/).filter((b) => b.trim().length > 0);
               total += blocks.length;
-            } else {
-              const sent = content.split(/[\.\!\?]+\s+/).filter((s) => s.trim().length > 0);
-              total += sent.length;
             }
+          }
+        } else if (this.parsingOption === 'text-file' && this.uploadedTextFiles && this.uploadedTextFiles.length > 0) {
+          const readFile = (this.uploadedTextFiles || []).map((f: File) => {
+            return new Promise<string>((resolve) => {
+              const read = new FileReader();
+              read.onload = () => resolve(String(read.result || ''));
+              read.onerror = () => resolve('');
+              read.readAsText(f);
+            });
+          });
+          const contents = await Promise.all(readFile);
+          for (const content of contents) {
+            const sent = content.split(/[\.\!\?]+\s+/).filter((s) => s.trim().length > 0);
+            total += sent.length;
           }
         } else if (this.parsingOption === 'text' && (this.textToParse || '').trim().length > 0) {
           const text = this.textToParse;
@@ -601,6 +751,7 @@ export default defineComponent({
         if (state.parsingOption) this.parsingOption = state.parsingOption;
         if (state.textToParse) this.textToParse = state.textToParse;
         if (state.textFormat) this.textFormat = state.textFormat;
+        if (state.textFileFormat) this.textFileFormat = state.textFileFormat;
         if (state.columnsToKeep) this.columnsToKeep = state.columnsToKeep;
         if (state.parserValue) {
           const found = (this.availableModels || []).find((m: any) => {
@@ -633,6 +784,29 @@ export default defineComponent({
               }
             }
             this.uploadedFiles = recreated;
+          }
+        }
+        if (Array.isArray(state.uploadedTextFiles) && state.uploadedTextFiles.length > 0) {
+          const first = state.uploadedTextFiles[0];
+          if (typeof first === "string") {
+            try {
+              const filename: File[] = state.uploadedTextFiles.map((name: string) => new File([""], name, { type: "text/plain" }));
+              this.uploadedTextFiles = filename;
+            } catch (e) {
+              this.uploadedTextFiles = [];
+            }
+          } else {
+            const recreated: File[] = [];
+            for (const sf of state.uploadedTextFiles) {
+              try {
+                const blob = new Blob([sf.content], { type: sf.type || "text/plain" });
+                const f = new File([blob], sf.name, { type: sf.type || "text/plain" });
+                recreated.push(f);
+              } catch (e) {
+                notifyMessage('Failed to restore one of the uploaded text files', 5000, 'warning');
+              }
+            }
+            this.uploadedTextFiles = recreated;
           }
         }
       } catch (e) {
