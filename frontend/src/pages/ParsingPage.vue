@@ -1,6 +1,11 @@
 <template>
   <q-page>
-    <ParsingComponent @get-parsing="handleParsing" />
+    <div class="q-pa-xs">
+      <MapComponent class="q-mb-xs" />
+      <div class="q-mt-neg-md">
+        <ParsingComponent @get-parsing="handleParsing" />
+      </div>
+    </div>
   </q-page>
 </template>
 
@@ -8,11 +13,13 @@
 import { defineComponent } from "vue";
 import { notifyMessage } from 'src/utils/notify';
 import ParsingComponent from "src/components/ParsingComponent.vue";
+import MapComponent from "src/components/MapComponent.vue";
 
 export default defineComponent({
   name: "ParsingPage",
   components: {
     ParsingComponent,
+    MapComponent,
   },
   methods: {
     handleParsing(samples: any) {
