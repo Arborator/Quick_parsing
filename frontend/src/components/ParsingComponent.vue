@@ -212,6 +212,7 @@
               class="bg-secondary text-white text-bold q-my-sm"
               no-caps
               :disable="disableParseBtn"
+              :loading="isParsingInProgress"
               label="PARSE THE INPUT"
               @click="startParsing"
             />
@@ -279,6 +280,7 @@ export default defineComponent({
       parsedSamples,
       disableUpload: false,
       showAdvanced: false,
+      isParsingInProgress: false,
       taskIntervalChecker: null as
         | null
         | ReturnType<typeof setTimeout>
@@ -288,7 +290,7 @@ export default defineComponent({
   },
   computed: {
     disableParseBtn() {
-      if (this.parser === null || this.disableUpload) return true;
+      if (!this.selectedParserName || this.disableUpload) return true;
       if (this.parsingOption === "file") return this.uploadedFiles.length === 0;
       if (this.parsingOption === "text-file")
         return this.uploadedTextFiles.length === 0;
@@ -340,7 +342,32 @@ export default defineComponent({
       this.EstimatedSentences();
     },
     parsingOption() {
+      if (this.parsingOption === 'file') {
+        this.textToParse = '';
+        this.uploadedTextFiles = [];
+      } else if (this.parsingOption === 'text-file') {
+        this.textToParse = '';
+        this.uploadedFiles = [];
+      } else if (this.parsingOption === 'text') {
+        this.uploadedFiles = [];
+        this.uploadedTextFiles = [];
+      }
       this.EstimatedSentences();
+    },
+    selectedParserName() {
+      if (this.selectedParserName) {
+        try {
+          const payload = JSON.parse(sessionStorage.getItem("parsingInputs") || "{}");
+          payload.selectedParserName = this.selectedParserName;
+          sessionStorage.setItem("parsingInputs", JSON.stringify(payload));
+        } catch (e) {
+          notifyMessage(
+            "Failed to save selected parser",
+            5000,
+            "warning",
+          );
+        }
+      }
     },
   },
   methods: {
@@ -411,6 +438,7 @@ export default defineComponent({
         );
       } finally {
         this.filteredModels = this.availableModels;
+        this.allParsers = this.availableModels.map(m => m.value.model_info.project_name);
         try {
           this.saveParsingInputs();
         } catch (e) {
@@ -448,6 +476,7 @@ export default defineComponent({
       return text;
     },
     async startParsing() {
+      this.isParsingInProgress = true;
       try {
         const payload = {
           parsingOption: this.parsingOption,
@@ -490,7 +519,7 @@ export default defineComponent({
         const payload = {
           text: payloadText,
           option: this.textFormat,
-          model: this.parser?.value || this.parser,
+          model: this.selectedParserName,
           parsingSettings,
         };
 
@@ -551,7 +580,7 @@ export default defineComponent({
             const payload = {
               text: combinedText,
               option: this.textFileFormat,
-              model: this.parser?.value || this.parser,
+              model: this.selectedParserName,
               parsingSettings,
             };
 
@@ -601,7 +630,7 @@ export default defineComponent({
       }
       form.append("text_to_parse", this.textToParse);
       form.append("text_format", this.textFormat);
-      form.append("model", JSON.stringify(this.parser.value));
+      form.append("model", this.selectedParserName);
       form.append("parsingSettings", JSON.stringify(parsingSettings));
 
       this.taskTimeStarted = Date.now();
@@ -860,6 +889,17 @@ export default defineComponent({
         if (state.textFormat) this.textFormat = state.textFormat;
         if (state.textFileFormat) this.textFileFormat = state.textFileFormat;
         if (state.columnsToKeep) this.columnsToKeep = state.columnsToKeep;
+        if (state.selectedParserName) {
+          const name = state.selectedParserName;
+          const parts = name.split('_');
+          if (parts.length === 2) {
+            const typeAndLang = parts[1].split('-');
+            this.parserType = parts[0]; 
+            this.selectedLanguage = typeAndLang[0];
+            this.selectedTreebank = typeAndLang.slice(1).join('-');
+          }
+        }
+        
         if (state.parserValue) {
           const found = (this.availableModels || []).find((m: any) => {
             try {
