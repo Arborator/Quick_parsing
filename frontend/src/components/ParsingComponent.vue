@@ -32,6 +32,7 @@
           <div class="col">
             <q-select
               outlined
+              use-input
               v-model="selectedLanguage"
               :options="availableLanguages"
               label="Language"
@@ -44,6 +45,7 @@
           <div class="col">
             <q-select
               outlined
+              use-input
               v-model="selectedTreebank"
               :options="availableTreebanks"
               label="Treebank"
@@ -354,6 +356,9 @@ export default defineComponent({
       }
       this.EstimatedSentences();
     },
+    selectedLanguage() {
+      this.selectedTreebank = '';
+    },
     selectedParserName() {
       if (this.selectedParserName) {
         try {
@@ -477,6 +482,16 @@ export default defineComponent({
     },
     async startParsing() {
       this.isParsingInProgress = true;
+      
+      if (this.selectedParserName) {
+        const found = (this.availableModels || []).find((m: any) => 
+          m.value.model_info.project_name === this.selectedParserName
+        );
+        if (found) {
+          this.parser = found;
+        }
+      }
+      
       try {
         const payload = {
           parsingOption: this.parsingOption,
@@ -519,7 +534,7 @@ export default defineComponent({
         const payload = {
           text: payloadText,
           option: this.textFormat,
-          model: this.selectedParserName,
+          model: this.parser?.value || this.parser,
           parsingSettings,
         };
 
@@ -580,7 +595,7 @@ export default defineComponent({
             const payload = {
               text: combinedText,
               option: this.textFileFormat,
-              model: this.selectedParserName,
+              model: this.parser?.value || this.parser,
               parsingSettings,
             };
 
@@ -630,29 +645,31 @@ export default defineComponent({
       }
       form.append("text_to_parse", this.textToParse);
       form.append("text_format", this.textFormat);
-      form.append("model", this.selectedParserName);
+      form.append("model", JSON.stringify(this.parser.value));
       form.append("parsingSettings", JSON.stringify(parsingSettings));
 
       this.taskTimeStarted = Date.now();
 
-      api
-        .parserParseStart(form)
-        .then((response) => {
-          if (response.data.status === "failure") {
-            notifyMessage(
-              "Parsing could not start : " + response.data.error,
-              10000,
-              "negative",
-            );
-          } else {
-            try {
-              this.inProgressNotify = notifyMessage(
-                "Parsing in progress... Don't reload the page",
-                0,
-                "info",
+      try {
+        api
+          .parserParseStart(form)
+          .then((response) => {
+            if (response.data.status === "failure") {
+              notifyMessage(
+                "Parsing could not start : " + response.data.error,
+                10000,
+                "negative",
               );
-            } catch (e) {
-              this.inProgressNotify = null;
+              this.clearCurrentTask();
+            } else {
+              try {
+                this.inProgressNotify = notifyMessage(
+                  "Parsing in progress... Don't reload the page",
+                  0,
+                  "info",
+                );
+              } catch (e) {
+                this.inProgressNotify = null;
             }
             const parseTaskId = response.data.data.parse_task_id;
             this.taskIntervalChecker = setInterval(() => {
@@ -661,8 +678,13 @@ export default defineComponent({
           }
         })
         .catch((error) => {
-          notifyMessage(error, 10000, "negative");
+          notifyMessage(`Error calling parse API: ${error}`, 10000, "negative");
+          this.clearCurrentTask();
         });
+      } catch (e) {
+        notifyMessage(`Error in file parsing: ${e}`, 10000, "negative");
+        this.clearCurrentTask();
+      }
     },
     checkParserStatus(taskId: string) {
       const data = { task_id: taskId };
