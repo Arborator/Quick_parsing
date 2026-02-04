@@ -34,11 +34,13 @@
               outlined
               use-input
               v-model="selectedLanguage"
-              :options="availableLanguages"
+              :options="filteredLanguages"
               label="Language"
               dense
               emit-value
               map-options
+              @filter="filterLanguages"
+              clearable
             />
           </div>
 
@@ -52,6 +54,7 @@
               dense
               emit-value
               map-options
+              clearable
             />
           </div>
 
@@ -260,6 +263,7 @@ export default defineComponent({
       selectedLanguage: "",
       selectedTreebank: "",
       allParsers: [] as string[],
+      filteredLanguages: [] as string[],
       uploadedFiles,
       uploadedTextFiles,
       parsingSentencesEstimate: 0,
@@ -356,6 +360,13 @@ export default defineComponent({
       }
       this.EstimatedSentences();
     },
+    availableLanguages: {
+      immediate: true,
+      handler(val: string[]) {
+        this.filteredLanguages = val;
+      },
+    },
+
     selectedLanguage() {
       this.selectedTreebank = '';
     },
@@ -479,6 +490,23 @@ export default defineComponent({
         }
       }
       return text;
+    },
+
+    filterLanguages(
+      val: string,
+      update: (cb: () => void) => void
+    ) {
+      update(() => {
+        if (!val) {
+          this.filteredLanguages = this.availableLanguages;
+          return;
+        }
+
+        const needle = val.toLowerCase();
+        this.filteredLanguages = this.availableLanguages.filter((lang) =>
+          lang.toLowerCase().includes(needle)
+        );
+      });
     },
     async startParsing() {
       this.isParsingInProgress = true;
@@ -919,6 +947,24 @@ export default defineComponent({
             this.parserType = parts[0]; 
             this.selectedLanguage = typeAndLang[0];
             this.selectedTreebank = typeAndLang.slice(1).join('-');
+          }
+        }
+
+        if (
+          !state.selectedParserName &&
+          state.parserValue?.model_info?.project_name
+        ) {
+          const name = state.parserValue.model_info.project_name;
+          const parts = name.split("_");
+
+          if (parts.length === 2) {
+            const typeAndLang = parts[1].split("-");
+            this.parserType = parts[0];
+            this.selectedLanguage = typeAndLang[0];
+            this.selectedTreebank = "";
+            this.$nextTick(() => {
+             this.selectedTreebank = typeAndLang.slice(1).join("-");
+            });
           }
         }
         
