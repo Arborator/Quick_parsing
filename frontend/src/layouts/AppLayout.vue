@@ -54,6 +54,12 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+    <div
+      v-if="isParsingLocked"
+      class="parsing-overlay"
+      style="position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:9999;display:flex;align-items:center;justify-content:center"
+    >
+    </div>
   </q-layout>
 </template>
 <script lang="ts">
@@ -66,13 +72,11 @@ export default defineComponent({
     return {
       currentTab: "parsing",
       tabs: appTabs,
-      routesMap: appTabs.reduce(
-        (acc, t) => {
-          (acc as any)[t.name] = t.path;
-          return acc;
-        },
-        {} as { [key: string]: string },
-      ),
+      isParsingLocked: false,
+      routesMap: appTabs.reduce((acc, t) => {
+        (acc as any)[t.name] = (t as any).path || (t as any).href;
+        return acc;
+      }, {} as { [key: string]: string }),
     };
   },
   watch: {
@@ -82,18 +86,32 @@ export default defineComponent({
   },
   mounted() {
     this.currentTab = this.getTabFromPath(this.$route.path);
+    window.addEventListener("parsing-lock", this.handleParsingLock);
   },
-  methods: {
-    navigateTo(tab: string) {
-      const route = this.routesMap[tab];
-      if (route) this.$router.push(route);
-    },
-    getTabFromPath(path: string) {
-      for (const key in this.routesMap) {
-        if (this.routesMap[key] === path) return key;
-      }
-      return "parsing";
-    },
+  beforeUnmount() {
+    window.removeEventListener("parsing-lock", this.handleParsingLock);
   },
+    methods: {
+      handleParsingLock(event: Event) {
+        const parsing = event as CustomEvent;
+        (this as any).isParsingLocked = Boolean(parsing.detail?.locked);
+      },
+      navigateTo(tab: string) {
+        const route = this.routesMap[tab];
+        if (!route) return;
+        if (route.startsWith("http")) {
+          window.open(route, "_blank");
+        } else {
+          this.$router.push(route);
+        }
+      },
+      getTabFromPath(path: string) {
+        for (const key in this.routesMap) {
+          const val = this.routesMap[key];
+          if (val === path) return key;
+        }
+        return "parsing";
+      },
+    },
 });
 </script>
