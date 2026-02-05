@@ -57,12 +57,8 @@
     <div
       v-if="isParsingLocked"
       class="parsing-overlay"
-      style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center"
+      style="position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:9999;display:flex;align-items:center;justify-content:center"
     >
-      <div style="text-align:center;color:white">
-        <q-spinner-dots color="white" size="56px" />
-        <div class="text-h6 q-mt-md">Parsing en cours — veuillez patienter</div>
-      </div>
     </div>
   </q-layout>
 </template>

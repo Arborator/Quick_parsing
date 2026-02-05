@@ -2513,10 +2513,13 @@ export default defineComponent({
       };
 
       this.map = window.L.map("languageMap", {
-        attributionControl: false,
+        attributionControl: true,
       }).setView([30, 0], 2);
+      
+      this.map.attributionControl.setPosition('bottomright');
+      
       window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
+        attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>',
       }).addTo(this.map);
 
       languageData.forEach((lang: any) => {
