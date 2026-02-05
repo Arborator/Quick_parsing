@@ -385,6 +385,17 @@ export default defineComponent({
         }
       }
     },
+    isParsingInProgress() {
+      try {
+        window.dispatchEvent(new CustomEvent("parsing-lock", { detail: { locked: this.isParsingInProgress } }));
+      } catch (e) {
+        notifyMessage(
+          "Failed to dispatch parsing lock event",
+          5000,
+          "warning",
+        );
+      }
+    },
   },
   methods: {
     async checkExtension() {
@@ -768,6 +779,7 @@ export default defineComponent({
         });
     },
     clearCurrentTask() {
+      this.isParsingInProgress = false;
       if (this.taskIntervalChecker !== null) {
         clearInterval(this.taskIntervalChecker);
       }
