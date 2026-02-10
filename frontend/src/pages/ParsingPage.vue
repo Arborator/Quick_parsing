@@ -2,7 +2,7 @@
   <q-page>
     <div class="q-pa-xs">
       <MapComponent class="q-mb-xs" />
-      <div class="q-mt-neg-md">
+      <div class="q-pa-xs">
         <ParsingComponent @get-parsing="handleParsing" />
       </div>
     </div>
