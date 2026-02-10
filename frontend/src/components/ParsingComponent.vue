@@ -183,7 +183,7 @@
         </q-card-section>
 
         <q-card-section
-          v-if="parsingOption !== 'text' && showAdvanced"
+          v-if="parsingOption !== 'text' && parsingOption !== 'text-file' && showAdvanced"
           class="q-pa-sm bg-grey-1"
         >
           <div class="row items-center q-gutter-sm">
