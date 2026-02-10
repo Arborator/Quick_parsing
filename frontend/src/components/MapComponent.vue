@@ -11,6 +11,13 @@
       </p>
     </div>
   </div>
+
+  <div v-if="showMapModal" class="map-modal-overlay" @click="closeMapModal">
+    <div class="map-modal" @click.stop>
+      <button class="close-modal-btn" @click="closeMapModal">x</button>
+      <div id="fullscreenMap" class="fullscreen-map-container"></div>
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -28,9 +35,63 @@ export default defineComponent({
     return {
       map: null as any,
       mapInitialized: false,
+      showMapModal: false,
+      fullscreenMap: null as any,
     };
   },
   methods: {
+    addMarkersToMap(mapInstance: any, languageData: any[], getColor: any, createInfoHTML: any) {
+      languageData.forEach((lang: any) => {
+        const marker = window.L.circleMarker([lang.lat, lang.lon], {
+          radius: 7,
+          fillColor: getColor(lang),
+          color: "#333",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.8,
+        }).addTo(mapInstance);
+
+        marker.bindTooltip(lang.name, { permanent: false, direction: "top" });
+
+        marker.on("mouseover", () => {
+          if (mapInstance === this.map) {
+            const infoBox = document.getElementById("mapInfo");
+            if (infoBox) infoBox.innerHTML = createInfoHTML(lang);
+          }
+          marker.setStyle({ weight: 3, radius: 10 });
+        });
+
+        marker.on("mouseout", () => {
+          marker.setStyle({ weight: 1, radius: 7 });
+        });
+      });
+    },
+    openMapModal() {
+      this.showMapModal = true;
+      this.$nextTick(() => {
+        if (this.fullscreenMap) return;
+        
+        this.fullscreenMap = window.L.map("fullscreenMap").setView([30, 0], 2);
+        window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>',
+        }).addTo(this.fullscreenMap);
+        
+        const languageData = (this.map as any)?.languageData || [];
+        const getColor = (this.map as any)?.getColor || ((lang: any) => "#3498DB");
+        const createInfoHTML = (this.map as any)?.createInfoHTML || ((lang: any) => lang.name);
+        
+        this.addMarkersToMap(this.fullscreenMap, languageData, getColor, createInfoHTML);
+        
+        this.fullscreenMap.invalidateSize();
+      });
+    },
+    closeMapModal() {
+      this.showMapModal = false;
+      if (this.fullscreenMap) {
+        this.fullscreenMap.remove();
+        this.fullscreenMap = null;
+      }
+    },
     async initializeMap() {
       if (this.mapInitialized || !window.L) return;
 
@@ -2521,29 +2582,35 @@ export default defineComponent({
       window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a>',
       }).addTo(this.map);
-
-      languageData.forEach((lang: any) => {
-        const marker = window.L.circleMarker([lang.lat, lang.lon], {
-          radius: 7,
-          fillColor: getColor(lang),
-          color: "#333",
-          weight: 1,
-          opacity: 1,
-          fillOpacity: 0.8,
-        }).addTo(this.map);
-
-        marker.bindTooltip(lang.name, { permanent: false, direction: "top" });
-
-        marker.on("mouseover", () => {
-          const infoBox = document.getElementById("mapInfo");
-          if (infoBox) infoBox.innerHTML = createInfoHTML(lang);
-          marker.setStyle({ weight: 3, radius: 10 });
-        });
-
-        marker.on("mouseout", () => {
-          marker.setStyle({ weight: 1, radius: 7 });
-        });
+      
+      (this.map as any).languageData = languageData;
+      (this.map as any).getColor = getColor;
+      (this.map as any).createInfoHTML = createInfoHTML;
+      
+      const ExpandControl = window.L.Control.extend({
+        options: {
+          position: 'bottomright'
+        },
+        onAdd: (map: any) => {
+          const container = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+          const button = window.L.DomUtil.create('a', 'leaflet-control-expand', container);
+          button.innerHTML = '<span class="material-icons">fullscreen</span>';
+          button.href = '#';
+          button.title = 'Expand Map';
+          
+          window.L.DomEvent.disableClickPropagation(button);
+          window.L.DomEvent.on(button, 'click', (e: any) => {
+            window.L.DomEvent.preventDefault(e);
+            this.openMapModal();
+          });
+          
+          return container;
+        }
       });
+      
+      new ExpandControl().addTo(this.map);
+      
+      this.addMarkersToMap(this.map, languageData, getColor, createInfoHTML);
 
       this.$nextTick(() => {
         setTimeout(() => {
@@ -2574,6 +2641,17 @@ export default defineComponent({
 </script>
 
 <style>
+.leaflet-control-expand {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 20px !important;
+  cursor: pointer !important;
+  line-height: 1 !important;
+}
+
 .map-card {
   background: white;
   border-radius: 8px;
@@ -2677,5 +2755,57 @@ export default defineComponent({
     font-size: 1.2em;
     margin-bottom: 16px;
   }
+}
+.leaflet-control-attribution .leaflet-attribution-flag {
+  display: none !important;
+}
+
+.map-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.map-modal {
+  position: relative;
+  width: 90%;
+  height: 90%;
+  max-width: 1400px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: white;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: 4px;
+  z-index: 10000;
+  color: #333;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.close-modal-btn:hover {
+  background: #f0f0f0;
+}
+
+.fullscreen-map-container {
+  width: 100%;
+  height: 100%;
 }
 </style>
