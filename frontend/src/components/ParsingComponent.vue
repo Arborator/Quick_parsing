@@ -40,7 +40,6 @@
               emit-value
               map-options
               @filter="filterLanguages"
-              clearable
             />
           </div>
 
@@ -54,8 +53,36 @@
               dense
               emit-value
               map-options
-              clearable
-            />
+            >
+              <template v-slot:selected-item="scope">
+                <div
+                  :tabindex="scope.tabindex"
+                  class="selected-model-label text-primary text-weight-bold"
+                >
+                  {{ scope.opt.label }}
+                </div>
+              </template>
+              <template v-slot:option="scope">
+                <q-item
+                  v-close-popup
+                  v-bind="scope.itemProps"
+                  clickable
+                  ripple
+                  dense
+                >
+                  <q-item-section>
+                    <q-item-label>{{ scope.opt.label }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-chip dense outline color="primary">
+                      {{
+                        parseFloat(scope.opt.score || 0).toFixed(3)
+                      }}
+                    </q-chip>
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
           </div>
 
           <div v-if="selectedParserName" class="col">
@@ -317,7 +344,7 @@ export default defineComponent({
     },
 
     availableTreebanks() {
-      return this.parserByType
+      const treebanks = this.parserByType
         .filter((p) => {
           const langPart = p.split("_")[1];
           const lang = langPart?.split("-")[0];
@@ -326,6 +353,19 @@ export default defineComponent({
         .map((p) => p.split("-").pop())
         .filter((v, i, a) => a.indexOf(v) === i)
         .sort();
+
+      return treebanks.map((tb) => {
+        const modelName = `${this.parserType}_${this.selectedLanguage}-${tb}`;
+        const model = this.availableModels.find(
+          (m) => m.value.model_info.project_name === modelName
+        );
+        const score = model?.value.scores_best?.LAS_epoch || 0;
+        return {
+          label: tb,
+          value: tb,
+          score: score,
+        };
+      });
     },
 
     selectedParserName() {
