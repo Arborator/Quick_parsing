@@ -162,12 +162,21 @@
                   <div class="text-subtitle2">Select text format to parse</div>
                 </div>
                 <div class="col-12">
-                  <q-option-group
-                    v-model="textFileFormat"
-                    :options="textFormatOptions"
-                    type="radio"
-                    inline
-                  />
+                  <div class="row items-center q-gutter-md">
+                    <q-radio v-model="textFileFormat" val="plainText" label="Plain text" />
+                    <div class="row items-center">
+                      <q-radio v-model="textFileFormat" val="vertical" label="Vertical" />
+                      <q-icon name="help" size="xs" color="primary" class="q-ml-xs cursor-pointer">
+                        <q-tooltip>Each token is written on a separate line, with a blank line indicating the end of the sentence.</q-tooltip>
+                      </q-icon>
+                    </div>
+                    <div class="row items-center">
+                      <q-radio v-model="textFileFormat" val="horizontal" label="Horizontal" />
+                      <q-icon name="help" size="xs" color="primary" class="q-ml-xs cursor-pointer">
+                        <q-tooltip>Each sentence is on a separate line, the tokens are separated by spaces.</q-tooltip>
+                      </q-icon>
+                    </div>
+                  </div>
                 </div>
               </div>
             </q-tab-panel>
@@ -184,12 +193,21 @@
                   <div class="text-subtitle2">Select text format to parse</div>
                 </div>
                 <div class="col-12">
-                  <q-option-group
-                    v-model="textFormat"
-                    :options="textFormatOptions"
-                    type="radio"
-                    inline
-                  />
+                  <div class="row items-center q-gutter-md">
+                    <q-radio v-model="textFormat" val="plainText" label="Plain text" />
+                    <div class="row items-center">
+                      <q-radio v-model="textFormat" val="vertical" label="Vertical" />
+                      <q-icon name="help" size="xs" color="primary" class="q-ml-xs cursor-pointer">
+                        <q-tooltip>Each token is written on a separate line, with a blank line indicating the end of the sentence.</q-tooltip>
+                      </q-icon>
+                    </div>
+                    <div class="row items-center">
+                      <q-radio v-model="textFormat" val="horizontal" label="Horizontal" />
+                      <q-icon name="help" size="xs" color="primary" class="q-ml-xs cursor-pointer">
+                        <q-tooltip>Each sentence is on a separate line, the tokens are separated by spaces.</q-tooltip>
+                      </q-icon>
+                    </div>
+                  </div>
                 </div>
               </div>
             </q-tab-panel>
