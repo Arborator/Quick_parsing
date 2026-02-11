@@ -36,19 +36,22 @@ export default defineComponent({
       }
       this.$router.push({ name: 'results' });
     },
-    selectLanguageFromMap(languageName: string) {
+    selectLanguageFromMap(languageData: any) {
+      const languageName = languageData.name;
       const parsingComp = this.$refs.parsingComponent as any;
       
-      const matchingParsers = parsingComp.allParsers.filter(
-        (parser: string) => parser.includes(languageName)
+      const matchingParser = parsingComp.allParsers.find((parser: string) =>
+        parser.toLowerCase().includes(languageName.toLowerCase())
       );
       
-      if (matchingParsers.length > 0) {
-        const firstParser = matchingParsers[0];
-        const parts = firstParser.split('_')[1];
-        const language = parts.split('-')[0];
-        
-        parsingComp.selectedLanguage = language;
+      if (matchingParser) {
+        const language = matchingParser.split('_')[1]?.split('-')[0];
+        if (language) {
+          parsingComp.selectedLanguage = language;
+          parsingComp.selectedTreebank = '';
+        }
+      } else {
+        console.warn(`Aucun parser trouvé pour: ${languageName}`);
       }
     },
   },
