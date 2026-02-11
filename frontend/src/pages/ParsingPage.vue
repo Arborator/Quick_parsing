@@ -3,7 +3,7 @@
     <div class="q-pa-xs">
       <MapComponent @language-selected="selectLanguageFromMap" />
       <div class="q-pa-xs">
-        <ParsingComponent ref="parsingComponent" />
+        <ParsingComponent ref="parsingComponent" @get-parsing="handleParsing" />
       </div>
     </div>
   </q-page>
