@@ -64,6 +64,10 @@ export default defineComponent({
         marker.on("mouseout", () => {
           marker.setStyle({ weight: 1, radius: 7 });
         });
+
+        marker.on('click', () => {
+          this.$emit('language-selected', { name: lang.name });
+        });
       });
     },
     openMapModal() {
