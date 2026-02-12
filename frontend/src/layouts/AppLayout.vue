@@ -11,6 +11,23 @@
         </q-btn>
         <q-space />
 
+        <div class="row justify-center">
+          <q-tabs
+            v-model="currentTab"
+            dense
+            class="text-white"
+            active-color="white"
+            indicator-color="white"
+            @update:model-value="navigateTo"
+          >
+            <q-tab v-for="t in tabs" :key="t.name" :name="t.name">
+              <div class="text-subtitle1">{{ t.label }}</div>
+            </q-tab>
+          </q-tabs>
+        </div>
+
+        <q-space />
+
         <q-btn flat href="https://autogramm.github.io/" :ripple="false" type="a">
           <img
             alt="autogramm"
@@ -31,23 +48,6 @@
     <q-breadcrumbs class="q-px-lg q-py-lg">
       <q-breadcrumbs-el v-for="t in tabs" :key="t.name" :label="t.label" />
     </q-breadcrumbs>
-
-    <q-bar class="bg-white">
-      <div class="row justify-center full-width">
-        <q-tabs
-          v-model="currentTab"
-          dense
-          class="text-primary"
-          active-color="primary"
-          indicator-color="primary"
-          @update:model-value="navigateTo"
-        >
-          <q-tab v-for="t in tabs" :key="t.name" :name="t.name">
-            <div class="text-subtitle2 text-bold">{{ t.label }}</div>
-          </q-tab>
-        </q-tabs>
-      </div>
-    </q-bar>
 
     <q-separator />
 

@@ -1,9 +1,9 @@
 <template>
   <q-page>
     <div class="q-pa-xs">
-      <MapComponent class="q-mb-xs" />
-      <div class="q-mt-neg-md">
-        <ParsingComponent @get-parsing="handleParsing" />
+      <MapComponent @language-selected="selectLanguageFromMap" />
+      <div class="q-pa-xs">
+        <ParsingComponent ref="parsingComponent" @get-parsing="handleParsing" />
       </div>
     </div>
   </q-page>
@@ -21,6 +21,11 @@ export default defineComponent({
     ParsingComponent,
     MapComponent,
   },
+  data() {
+    return {
+      parsingComponentRef: null as any,
+    };
+  },
   methods: {
     handleParsing(samples: any) {
       try {
@@ -30,6 +35,24 @@ export default defineComponent({
         notifyMessage('Failed to store results locally; continuing navigation', 5000, 'warning');
       }
       this.$router.push({ name: 'results' });
+    },
+    selectLanguageFromMap(languageData: any) {
+      const languageName = languageData.name;
+      const parsingComp = this.$refs.parsingComponent as any;
+      
+      const matchingParser = parsingComp.allParsers.find((parser: string) =>
+        parser.toLowerCase().includes(languageName.toLowerCase())
+      );
+      
+      if (matchingParser) {
+        const language = matchingParser.split('_')[1]?.split('-')[0];
+        if (language) {
+          parsingComp.selectedLanguage = language;
+          parsingComp.selectedTreebank = '';
+        }
+      } else {
+        console.warn(`Aucun parser trouvé pour: ${languageName}`);
+      }
     },
   },
 });
