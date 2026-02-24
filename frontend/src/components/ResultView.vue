@@ -19,23 +19,20 @@
 
   <q-card-section>
     <q-tabs v-model="resultViewOption" class="bg-primary text-white">
-      <q-tab name="conll">
-        <div>
-          <q-icon name="file_present" size="20px" class="q-mb-xs" />
-          <div class="text-subtitle2">Conll view</div>
-        </div>
-      </q-tab>
       <q-tab name="tree">
         <div>
           <q-icon name="account_tree" size="20px" class="q-mb-xs" />
           <div class="text-subtitle2">Tree view</div>
         </div>
       </q-tab>
+      <q-tab name="conll">
+        <div>
+          <q-icon name="file_present" size="20px" class="q-mb-xs" />
+          <div class="text-subtitle2">Conll view</div>
+        </div>
+      </q-tab>
     </q-tabs>
     <q-tab-panels v-model="resultViewOption" class="background">
-      <q-tab-panel name="conll">
-        <pre>{{ parsedSamples[parsedSample] }}</pre>
-      </q-tab-panel>
       <q-tab-panel name="tree">
         <q-virtual-scroll
           :items="conlls"
@@ -48,6 +45,9 @@
             <TreeComponent :sentenceConll="item" />
           </template>
         </q-virtual-scroll>
+      </q-tab-panel>
+      <q-tab-panel name="conll">
+        <pre>{{ parsedSamples[parsedSample] }}</pre>
       </q-tab-panel>
     </q-tab-panels>
   </q-card-section>
@@ -73,7 +73,7 @@ export default defineComponent({
   },
   data() {
     const parsedSample: string = "";
-    const resultViewOption: string = "conll";
+    const resultViewOption: string = "tree";
     const conlls: string[] = [];
     return {
       parsedSample,

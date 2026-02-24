@@ -40,13 +40,13 @@
               emit-value
               map-options
               @filter="filterLanguages"
+              clearable
             />
           </div>
 
           <div class="col">
             <q-select
               outlined
-              use-input
               v-model="selectedTreebank"
               :options="availableTreebanks"
               label="Treebank"
@@ -84,26 +84,28 @@
               </template>
             </q-select>
           </div>
-
-          <div v-if="selectedParserName" class="col">
-            <q-chip
-              color="primary"
-              text-color="white"
-              icon="check"
-            >
-              {{ selectedParserName }}
-            </q-chip>
-          </div>
         </q-card-section>
+
+        <q-card-section class="row justify-center q-pa-sm q-mt-md" v-if="selectedParserName">
+          <q-chip
+            color="primary"
+            text-color="white"
+            icon="check"
+            size="md"
+          >
+            {{ selectedParserName }}
+          </q-chip>
+        </q-card-section>
+
         <q-card-section class="q-pa-lg">
           <q-tabs v-model="parsingOption">
             <q-tab
-              :class="parsingOption === 'file' ? 'text-primary' : 'text-grey-6'"
-              name="file"
+              :class="parsingOption === 'text' ? 'text-primary' : 'text-grey-6'"
+              name="text"
             >
               <div>
-                <q-icon name="file_present" size="20px" class="q-mb-xs" />
-                <div class="text-subtitle2">File input</div>
+                <q-icon name="title" size="20px" class="q-mb-xs" />
+                <div class="text-subtitle2">Plain text</div>
               </div>
             </q-tab>
             <q-tab
@@ -118,12 +120,12 @@
               </div>
             </q-tab>
             <q-tab
-              :class="parsingOption === 'text' ? 'text-primary' : 'text-grey-6'"
-              name="text"
+              :class="parsingOption === 'file' ? 'text-primary' : 'text-grey-6'"
+              name="file"
             >
               <div>
-                <q-icon name="title" size="20px" class="q-mb-xs" />
-                <div class="text-subtitle2">Text input</div>
+                <q-icon name="file_present" size="20px" class="q-mb-xs" />
+                <div class="text-subtitle2">CONLL file</div>
               </div>
             </q-tab>
           </q-tabs>
@@ -164,18 +166,14 @@
                 <div class="col-12">
                   <div class="row items-center q-gutter-md">
                     <q-radio v-model="textFileFormat" val="plainText" label="Plain text" />
-                    <div class="row items-center">
-                      <q-radio v-model="textFileFormat" val="vertical" label="Vertical" />
-                      <q-icon name="help" size="xs" color="primary" class="q-ml-xs cursor-pointer">
-                        <q-tooltip>Each token is written on a separate line, with a blank line indicating the end of the sentence.</q-tooltip>
-                      </q-icon>
-                    </div>
-                    <div class="row items-center">
-                      <q-radio v-model="textFileFormat" val="horizontal" label="Horizontal" />
-                      <q-icon name="help" size="xs" color="primary" class="q-ml-xs cursor-pointer">
-                        <q-tooltip>Each sentence is on a separate line, the tokens are separated by spaces.</q-tooltip>
-                      </q-icon>
-                    </div>
+                    <q-radio v-model="textFileFormat" val="vertical" label="Vertical" />
+                    <q-radio v-model="textFileFormat" val="horizontal" label="Horizontal" />
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="text-primary">
+                    <span v-if="textFileFormat === 'vertical'">Each token is written on a separate line, with a blank line indicating the end of the sentence.</span>
+                    <span v-else-if="textFileFormat === 'horizontal'">Each sentence is on a separate line, the tokens are separated by spaces.</span>
                   </div>
                 </div>
               </div>
@@ -195,18 +193,14 @@
                 <div class="col-12">
                   <div class="row items-center q-gutter-md">
                     <q-radio v-model="textFormat" val="plainText" label="Plain text" />
-                    <div class="row items-center">
-                      <q-radio v-model="textFormat" val="vertical" label="Vertical" />
-                      <q-icon name="help" size="xs" color="primary" class="q-ml-xs cursor-pointer">
-                        <q-tooltip>Each token is written on a separate line, with a blank line indicating the end of the sentence.</q-tooltip>
-                      </q-icon>
-                    </div>
-                    <div class="row items-center">
-                      <q-radio v-model="textFormat" val="horizontal" label="Horizontal" />
-                      <q-icon name="help" size="xs" color="primary" class="q-ml-xs cursor-pointer">
-                        <q-tooltip>Each sentence is on a separate line, the tokens are separated by spaces.</q-tooltip>
-                      </q-icon>
-                    </div>
+                    <q-radio v-model="textFormat" val="vertical" label="Vertical" />
+                    <q-radio v-model="textFormat" val="horizontal" label="Horizontal" />
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="text-primary">
+                    <span v-if="textFormat === 'vertical'">Each token is written on a separate line, with a blank line indicating the end of the sentence.</span>
+                    <span v-else-if="textFormat === 'horizontal'">Each sentence is on a separate line, the tokens are separated by spaces.</span>
                   </div>
                 </div>
               </div>
@@ -314,7 +308,7 @@ export default defineComponent({
       parsingSentencesEstimate: 0,
       textToParse,
       parser,
-      parsingOption: "file",
+      parsingOption: "text",
       resultViewOption: "conll",
       textFormatOptions: [
         { label: "Plain text", value: "plainText" },
@@ -524,6 +518,10 @@ export default defineComponent({
       } finally {
         this.filteredModels = this.availableModels;
         this.allParsers = this.availableModels.map(m => m.value.model_info.project_name);
+        const frenchLang = this.availableLanguages.find(lang => lang.toLowerCase().includes("french"));
+        if (frenchLang) {
+          this.selectedLanguage = frenchLang;
+        }
         try {
           this.saveParsingInputs();
         } catch (e) {

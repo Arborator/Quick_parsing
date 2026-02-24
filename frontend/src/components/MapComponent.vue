@@ -1,7 +1,7 @@
 <template>
   <div class="map-card">
-    <h6 class="text-bold text-primary">
-      🌍 Universal Dependencies Language Maps
+    <h6 class="text-bold text-primary text-center">
+      🌍 Universal Dependencies & Surface Syntactic Universal Dependencies Language Maps
     </h6>
     <div id="languageMap" class="map-container"></div>
     <div class="info-box" id="mapInfo">
@@ -2573,7 +2573,6 @@ export default defineComponent({
                 <div class="stat-item"><div class="label">Total Sentences</div><div class="value">${formatNumber(lang.sentences)}</div></div>
                 <div class="stat-item"><div class="label">Total Tokens</div><div class="value">${formatNumber(lang.tokens)}</div></div>
                 <div class="stat-item"><div class="label">Avg Sentence Length</div><div class="value">${lang.avg_sent_len} tokens</div></div>
-                <div class="stat-item"><div class="label">Avg Treebank Size</div><div class="value">${formatNumber(avgTreebankSentences)} sent / ${formatNumber(avgTreebankTokens)} tok</div></div>
             </div>`;
       };
 
