@@ -348,22 +348,27 @@ export default defineComponent({
     },
 
     availableLanguages() {
-      const langs = this.parserByType.map((p) => {
-        const parts = p.split("_")[1];
-        return parts?.split("-")[0] || "";
-      });
+      const langs = this.parserByType
+        .map((p) => {
+          const match = p.match(/^[A-Z]+_(.+)-([^-]+)$/);
+          return match?.[1];
+        })
+        .filter((lang): lang is string => typeof lang === "string" && lang.length > 0);
       return [...new Set(langs)].sort();
     },
 
     availableTreebanks() {
       const treebanks = this.parserByType
         .filter((p) => {
-          const langPart = p.split("_")[1];
-          const lang = langPart?.split("-")[0];
+          const match = p.match(/^[A-Z]+_(.+)-([^-]+)$/);
+          const lang = match ? match[1] : "";
           return lang === this.selectedLanguage;
         })
-        .map((p) => p.split("-").pop())
-        .filter((v, i, a) => a.indexOf(v) === i)
+        .map((p) => {
+          const match = p.match(/^[A-Z]+_(.+)-([^-]+)$/);
+          return match ? match[2] : "";
+        })
+        .filter((v, i, a) => v && a.indexOf(v) === i)
         .sort();
 
       return treebanks.map((tb) => {

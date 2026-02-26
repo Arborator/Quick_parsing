@@ -45,7 +45,8 @@ export default defineComponent({
       );
       
       if (matchingParser) {
-        const language = matchingParser.split('_')[1]?.split('-')[0];
+        const match = matchingParser.match(/^[A-Z]+_(.+)-([^-]+)$/);
+        const language = match ? match[1] : undefined;
         if (language) {
           parsingComp.selectedLanguage = language;
           parsingComp.selectedTreebank = '';
