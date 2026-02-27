@@ -86,7 +86,7 @@
           </div>
         </q-card-section>
 
-        <q-card-section class="row justify-center q-pa-sm q-mt-md" v-if="selectedParserName">
+        <q-card-section class="row justify-center items-center q-gutter-md q-pa-sm q-mt-md" v-if="selectedParserName">
           <q-chip
             color="primary"
             text-color="white"
@@ -95,6 +95,20 @@
           >
             {{ selectedParserName }}
           </q-chip>
+          
+          <q-btn
+            v-if="parserType === 'UD'"
+            :href="`https://github.com/universaldependencies/${selectedParserName.split('@')[0]}`"
+            target="_blank"
+            round
+            unelevated
+            color="primary"
+            size="md"
+            class="github-btn"
+          >
+            <i class="fa-brands fa-github fa-xl"></i>
+            <q-tooltip>View on GitHub</q-tooltip>
+          </q-btn>
         </q-card-section>
 
         <q-card-section class="q-pa-lg">
