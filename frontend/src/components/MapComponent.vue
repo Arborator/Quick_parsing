@@ -53,14 +53,6 @@ export default defineComponent({
 
         marker.bindTooltip(lang.name, { permanent: false, direction: "top" });
 
-        marker.on("mouseover", () => {
-          if (mapInstance === this.map) {
-            const infoBox = document.getElementById("mapInfo");
-            if (infoBox) infoBox.innerHTML = createInfoHTML(lang);
-          }
-          marker.setStyle({ weight: 3, radius: 10 });
-        });
-
         marker.on("mouseout", () => {
           marker.setStyle({ weight: 1, radius: 7 });
         });
@@ -94,6 +86,30 @@ export default defineComponent({
       if (this.fullscreenMap) {
         this.fullscreenMap.remove();
         this.fullscreenMap = null;
+      }
+    },
+    selectLanguageOnMap(languageName: string, availableLanguages: string[] = []) {
+      const languageData = (this.map as any)?.languageData || [];
+      const lang = languageData.find((l: any) => 
+        l.name.toLowerCase() === languageName.toLowerCase()
+      );
+      
+      if (lang) {
+        const createInfoHTML = (this.map as any)?.createInfoHTML || ((l: any) => l.name);
+        let infoHTML = createInfoHTML(lang);
+        
+        const parserAvailable = availableLanguages.includes(languageName);
+        if (!parserAvailable) {
+          infoHTML = infoHTML.replace(
+            /<\/h6>/,
+            '<span style="color: #d32f2f; font-size: 14px; margin-left: 6px;"><strong>(No parser available for this language)</strong></span></h6>'
+          );
+        }
+        
+        const infoBox = document.getElementById("mapInfo");
+        if (infoBox) {
+          infoBox.innerHTML = infoHTML;
+        }
       }
     },
     async initializeMap() {

@@ -426,6 +426,9 @@ export default defineComponent({
 
     selectedLanguage() {
       this.selectedTreebank = '';
+      if (this.selectedLanguage) {
+        this.$emit('language-changed', { language: this.selectedLanguage });
+      }
     },
     selectedParserName() {
       if (this.selectedParserName) {
