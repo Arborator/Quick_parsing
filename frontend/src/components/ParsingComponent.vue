@@ -10,14 +10,14 @@
           </div>
         </q-card-section>
 
-        <q-card-section class="row items-center q-gutter-sm q-pa-sm">
-          <div class="col-12">
-            <div class="text-subtitle2 q-mb-md">
-              We have {{ availableModels.length }} parsers available
-            </div>
+        <q-card-section class="q-pa-sm">
+          <div class="text-subtitle2 q-mb-md">
+            We have {{ availableModels.length }} parsers available
           </div>
+        </q-card-section>
 
-          <div class="col">
+        <q-card-section class="row items-center q-gutter-sm q-pa-sm">
+          <div class="col-auto">
             <q-option-group
               v-model="parserType"
               :options="[
@@ -32,7 +32,7 @@
           <div class="col">
             <q-select
               outlined
-              use-input
+              :use-input="!selectedLanguage"
               v-model="selectedLanguage"
               :options="filteredLanguages"
               label="Language"
@@ -86,7 +86,7 @@
           </div>
         </q-card-section>
 
-        <q-card-section class="row justify-center q-pa-sm q-mt-md" v-if="selectedParserName">
+        <q-card-section class="row justify-center items-center q-gutter-md q-pa-sm q-mt-md" v-if="selectedParserName">
           <q-chip
             color="primary"
             text-color="white"
@@ -95,6 +95,20 @@
           >
             {{ selectedParserName }}
           </q-chip>
+          
+          <q-btn
+            v-if="parserType === 'UD'"
+            :href="`https://github.com/universaldependencies/${selectedParserName.split('@')[0]}`"
+            target="_blank"
+            round
+            unelevated
+            color="primary"
+            size="md"
+            class="github-btn"
+          >
+            <i class="fa-brands fa-github fa-xl"></i>
+            <q-tooltip>View on GitHub</q-tooltip>
+          </q-btn>
         </q-card-section>
 
         <q-card-section class="q-pa-lg">
@@ -172,7 +186,8 @@
                 </div>
                 <div class="col-12">
                   <div class="text-primary">
-                    <span v-if="textFileFormat === 'vertical'">Each token is written on a separate line, with a blank line indicating the end of the sentence.</span>
+                    <span v-if="textFileFormat === 'plainText'">Natural text that will be automatically tokenized and split into sentences based on punctuation. The tokenizer is just for the French language.</span>
+                    <span v-else-if="textFileFormat === 'vertical'">Each token is written on a separate line, with a blank line indicating the end of the sentence.</span>
                     <span v-else-if="textFileFormat === 'horizontal'">Each sentence is on a separate line, the tokens are separated by spaces.</span>
                   </div>
                 </div>
@@ -199,7 +214,8 @@
                 </div>
                 <div class="col-12">
                   <div class="text-primary">
-                    <span v-if="textFormat === 'vertical'">Each token is written on a separate line, with a blank line indicating the end of the sentence.</span>
+                    <span v-if="textFormat === 'plainText'">Natural text that will be automatically tokenized and split into sentences based on punctuation. The tokenizer is just for the French language.</span>
+                    <span v-else-if="textFormat === 'vertical'">Each token is written on a separate line, with a blank line indicating the end of the sentence.</span>
                     <span v-else-if="textFormat === 'horizontal'">Each sentence is on a separate line, the tokens are separated by spaces.</span>
                   </div>
                 </div>
@@ -348,22 +364,27 @@ export default defineComponent({
     },
 
     availableLanguages() {
-      const langs = this.parserByType.map((p) => {
-        const parts = p.split("_")[1];
-        return parts?.split("-")[0] || "";
-      });
+      const langs = this.parserByType
+        .map((p) => {
+          const match = p.match(/^[A-Z]+_(.+)-([^-]+)$/);
+          return match?.[1];
+        })
+        .filter((lang): lang is string => typeof lang === "string" && lang.length > 0);
       return [...new Set(langs)].sort();
     },
 
     availableTreebanks() {
       const treebanks = this.parserByType
         .filter((p) => {
-          const langPart = p.split("_")[1];
-          const lang = langPart?.split("-")[0];
+          const match = p.match(/^[A-Z]+_(.+)-([^-]+)$/);
+          const lang = match ? match[1] : "";
           return lang === this.selectedLanguage;
         })
-        .map((p) => p.split("-").pop())
-        .filter((v, i, a) => a.indexOf(v) === i)
+        .map((p) => {
+          const match = p.match(/^[A-Z]+_(.+)-([^-]+)$/);
+          return match ? match[2] : "";
+        })
+        .filter((v, i, a) => v && a.indexOf(v) === i)
         .sort();
 
       return treebanks.map((tb) => {
@@ -421,6 +442,9 @@ export default defineComponent({
 
     selectedLanguage() {
       this.selectedTreebank = '';
+      if (this.selectedLanguage) {
+        this.$emit('language-changed', { language: this.selectedLanguage });
+      }
     },
     selectedParserName() {
       if (this.selectedParserName) {

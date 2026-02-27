@@ -2,11 +2,11 @@
   <q-layout view="hHh Lpr fFf">
     <q-header class="bg-primary q-px-lg q-py-sm">
       <div class="row items-center q-gutter-lg" style="height: 70px">
-        <q-btn flat href="https://arborator.grew.fr/" :ripple="false" type="a">
+        <q-btn flat :ripple="false" type="a">
           <img
-            alt="Arborator"
-            src="/svg/arborator.grew.white.svg"
-            style="height: 50px; object-fit: contain"
+            alt="parser logo"
+            src="/svg/parser.svg"
+            style="height: 45px; object-fit: contain"
           />
         </q-btn>
         <q-space />
@@ -21,7 +21,7 @@
             @update:model-value="navigateTo"
           >
             <q-tab v-for="t in tabs" :key="t.name" :name="t.name">
-              <div class="text-subtitle1">{{ t.label }}</div>
+              <div class="text-body2">{{ t.label }}</div>
             </q-tab>
           </q-tabs>
         </div>

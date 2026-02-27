@@ -53,14 +53,6 @@ export default defineComponent({
 
         marker.bindTooltip(lang.name, { permanent: false, direction: "top" });
 
-        marker.on("mouseover", () => {
-          if (mapInstance === this.map) {
-            const infoBox = document.getElementById("mapInfo");
-            if (infoBox) infoBox.innerHTML = createInfoHTML(lang);
-          }
-          marker.setStyle({ weight: 3, radius: 10 });
-        });
-
         marker.on("mouseout", () => {
           marker.setStyle({ weight: 1, radius: 7 });
         });
@@ -94,6 +86,30 @@ export default defineComponent({
       if (this.fullscreenMap) {
         this.fullscreenMap.remove();
         this.fullscreenMap = null;
+      }
+    },
+    selectLanguageOnMap(languageName: string, availableLanguages: string[] = []) {
+      const languageData = (this.map as any)?.languageData || [];
+      const lang = languageData.find((l: any) => 
+        l.name.toLowerCase() === languageName.toLowerCase()
+      );
+      
+      if (lang) {
+        const createInfoHTML = (this.map as any)?.createInfoHTML || ((l: any) => l.name);
+        let infoHTML = createInfoHTML(lang);
+        
+        const parserAvailable = availableLanguages.includes(languageName);
+        if (!parserAvailable) {
+          infoHTML = infoHTML.replace(
+            /<\/h6>/,
+            '<span style="color: #d32f2f; font-size: 14px; margin-left: 6px;"><strong>(No parser available for this language)</strong></span></h6>'
+          );
+        }
+        
+        const infoBox = document.getElementById("mapInfo");
+        if (infoBox) {
+          infoBox.innerHTML = infoHTML;
+        }
       }
     },
     async initializeMap() {
@@ -297,7 +313,7 @@ export default defineComponent({
         },
         {
           code: "azz",
-          name: "HighlandNahuatl",
+          name: "Highland_Puebla_Nahuatl",
           lat: 19.5833333333,
           lon: -97.3333333333,
           wals_family: "Uto-Aztecan",
@@ -466,7 +482,7 @@ export default defineComponent({
         },
         {
           code: "ckb",
-          name: "CentralKurdish",
+          name: "Northern_Kurdish",
           lat: 36.0,
           lon: 44.0,
           wals_family: "Indo-European",
@@ -544,7 +560,7 @@ export default defineComponent({
         },
         {
           code: "cu",
-          name: "OldChurchSlavonic",
+          name: "Old_Church_Slavonic",
           lat: 42.7,
           lon: 25.5,
           wals_family: "Indo-European",
@@ -765,7 +781,7 @@ export default defineComponent({
         },
         {
           code: "frm",
-          name: "MiddleFrench",
+          name: "Middle_French",
           lat: 48.9,
           lon: 2.35,
           wals_family: "Indo-European",
@@ -778,7 +794,7 @@ export default defineComponent({
         },
         {
           code: "fro",
-          name: "OldFrench",
+          name: "Old_French",
           lat: 49.5,
           lon: 2.35,
           wals_family: "Indo-European",
@@ -804,7 +820,7 @@ export default defineComponent({
         },
         {
           code: "gd",
-          name: "Gaelic",
+          name: "Scottish_Gaelic",
           lat: 57.0,
           lon: -4.0,
           wals_family: "Indo-European",
@@ -856,7 +872,7 @@ export default defineComponent({
         },
         {
           code: "grc",
-          name: "AncientGreek",
+          name: "Ancient_Greek",
           lat: 38.0,
           lon: 23.7,
           wals_family: "Indo-European",
@@ -908,7 +924,7 @@ export default defineComponent({
         },
         {
           code: "gun",
-          name: "Mby\u00e1Guaran\u00ed",
+          name: "Mbya_Guarani",
           lat: -25.5,
           lon: -54.5,
           wals_family: "Tupian",
@@ -973,7 +989,7 @@ export default defineComponent({
         },
         {
           code: "hbo",
-          name: "AncientHebrew",
+          name: "Ancient_Hebrew",
           lat: 32.3,
           lon: 35.2,
           wals_family: "Afro-Asiatic",
@@ -1038,7 +1054,7 @@ export default defineComponent({
         },
         {
           code: "hsb",
-          name: "UpperSorbian",
+          name: "Upper_Sorbian",
           lat: 51.8333333333,
           lon: 14.5,
           wals_family: "Indo-European",
@@ -1051,7 +1067,7 @@ export default defineComponent({
         },
         {
           code: "ht",
-          name: "Haitian",
+          name: "Haitian_Creole",
           lat: 18.9,
           lon: -72.3,
           wals_family: "Indo-European",
@@ -1090,7 +1106,7 @@ export default defineComponent({
         },
         {
           code: "hyw",
-          name: "WestArmenian",
+          name: "Western_Armenian",
           lat: 38.5,
           lon: 43.5,
           wals_family: "Indo-European",
@@ -1259,7 +1275,7 @@ export default defineComponent({
         },
         {
           code: "kpv",
-          name: "Komi",
+          name: "Komi_Zyrian",
           lat: 65.0,
           lon: 55.0,
           wals_family: "Uralic",
@@ -1376,7 +1392,7 @@ export default defineComponent({
         },
         {
           code: "lzh",
-          name: "ClassChinese",
+          name: "Classical_Chinese",
           lat: 35.0,
           lon: 108.9,
           wals_family: "Sino-Tibetan",
@@ -1519,7 +1535,7 @@ export default defineComponent({
         },
         {
           code: "nds",
-          name: "LowSaxon",
+          name: "Low_Saxon",
           lat: 53.0,
           lon: 10.0,
           wals_family: "Indo-European",
@@ -1532,7 +1548,7 @@ export default defineComponent({
         },
         {
           code: "nhi",
-          name: "WestNahuatl",
+          name: "Western_Sierra_Puebla_Nahuatl",
           lat: 19.0,
           lon: -98.0,
           wals_family: "Uto-Aztecan",
@@ -1636,7 +1652,7 @@ export default defineComponent({
         },
         {
           code: "orv",
-          name: "OldEastSlavic",
+          name: "Old_East_Slavic",
           lat: 59.93,
           lon: 30.34,
           wals_family: "Indo-European",
@@ -1649,7 +1665,7 @@ export default defineComponent({
         },
         {
           code: "ota",
-          name: "OttomanTurkish",
+          name: "Ottoman_Turkish",
           lat: 41.0,
           lon: 29.0,
           wals_family: "Turkic",
@@ -1662,7 +1678,7 @@ export default defineComponent({
         },
         {
           code: "otk",
-          name: "OldTurkish",
+          name: "Old_Turkish",
           lat: 39.9,
           lon: 32.9,
           wals_family: "Turkic",
@@ -1727,7 +1743,7 @@ export default defineComponent({
         },
         {
           code: "pro",
-          name: "OldProven\u00e7al",
+          name: "Old_Occitan",
           lat: 43.7,
           lon: 4.0,
           wals_family: "Indo-European",
@@ -1766,7 +1782,7 @@ export default defineComponent({
         },
         {
           code: "qaf",
-          name: "Maghrebi",
+          name: "Maghrebi_Arabic_French",
           lat: 34.0,
           lon: 2.0,
           wals_family: "Afro-Asiatic",
@@ -1805,7 +1821,7 @@ export default defineComponent({
         },
         {
           code: "qtd",
-          name: "TurkishGerman",
+          name: "Turkish_German",
           lat: 48.78,
           lon: 9.18,
           wals_family: "Mixed",
@@ -1818,7 +1834,7 @@ export default defineComponent({
         },
         {
           code: "qte",
-          name: "TeluguEnglish",
+          name: "Telugu_English",
           lat: 17.4,
           lon: 78.5,
           wals_family: "Mixed",
@@ -1831,7 +1847,7 @@ export default defineComponent({
         },
         {
           code: "qti",
-          name: "TurkishEnglish",
+          name: "Turkish_English",
           lat: 51.5,
           lon: -0.1,
           wals_family: "Mixed",
@@ -2039,7 +2055,7 @@ export default defineComponent({
         },
         {
           code: "sme",
-          name: "NorthSami",
+          name: "North_Sami",
           lat: 69.0,
           lon: 24.0,
           wals_family: "Uralic",
@@ -2390,7 +2406,7 @@ export default defineComponent({
         },
         {
           code: "xcl",
-          name: "ClassArmenian",
+          name: "Classical_Armenian",
           lat: 40.0,
           lon: 44.5,
           wals_family: "Indo-European",
