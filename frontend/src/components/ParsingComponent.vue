@@ -10,14 +10,14 @@
           </div>
         </q-card-section>
 
-        <q-card-section class="row items-center q-gutter-sm q-pa-sm">
-          <div class="col-12">
-            <div class="text-subtitle2 q-mb-md">
-              We have {{ availableModels.length }} parsers available
-            </div>
+        <q-card-section class="q-pa-sm">
+          <div class="text-subtitle2 q-mb-md">
+            We have {{ availableModels.length }} parsers available
           </div>
+        </q-card-section>
 
-          <div class="col">
+        <q-card-section class="row items-center q-gutter-sm q-pa-sm">
+          <div class="col-auto">
             <q-option-group
               v-model="parserType"
               :options="[
@@ -32,7 +32,7 @@
           <div class="col">
             <q-select
               outlined
-              use-input
+              :use-input="!selectedLanguage"
               v-model="selectedLanguage"
               :options="filteredLanguages"
               label="Language"
