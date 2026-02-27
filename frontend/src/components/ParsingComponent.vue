@@ -186,7 +186,8 @@
                 </div>
                 <div class="col-12">
                   <div class="text-primary">
-                    <span v-if="textFileFormat === 'vertical'">Each token is written on a separate line, with a blank line indicating the end of the sentence.</span>
+                    <span v-if="textFileFormat === 'plainText'">Natural text that will be automatically tokenized and split into sentences based on punctuation. The tokenizer is just for the French language.</span>
+                    <span v-else-if="textFileFormat === 'vertical'">Each token is written on a separate line, with a blank line indicating the end of the sentence.</span>
                     <span v-else-if="textFileFormat === 'horizontal'">Each sentence is on a separate line, the tokens are separated by spaces.</span>
                   </div>
                 </div>
@@ -213,7 +214,8 @@
                 </div>
                 <div class="col-12">
                   <div class="text-primary">
-                    <span v-if="textFormat === 'vertical'">Each token is written on a separate line, with a blank line indicating the end of the sentence.</span>
+                    <span v-if="textFormat === 'plainText'">Natural text that will be automatically tokenized and split into sentences based on punctuation. The tokenizer is just for the French language.</span>
+                    <span v-else-if="textFormat === 'vertical'">Each token is written on a separate line, with a blank line indicating the end of the sentence.</span>
                     <span v-else-if="textFormat === 'horizontal'">Each sentence is on a separate line, the tokens are separated by spaces.</span>
                   </div>
                 </div>

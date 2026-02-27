@@ -4,7 +4,7 @@ export const appTabs = [
   { name: "about", label: "About", path: "/about" },
   { name: "parsing", label: "Parsing", path: "/parsing" },
   { name: "results", label: "Results", path: "/results" },
-  { name: "Disscussions", label: "Disscussions", href:"https://github.com/Arborator/arborator-frontend/issues" },
+  { name: "discussions", label: "Discussions", href:"https://github.com/Arborator/Quick_parsing/issues" },
 ];
 
 const routes: RouteRecordRaw[] = [
