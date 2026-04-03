@@ -43,7 +43,7 @@ export default defineConfig((ctx) => {
         }
       : {
           // and on build (production):
-          API: 'https://parser.grew.fr',
+          API: 'https://parser.surfacesyntacticud.org',
         },
 
       target: {
