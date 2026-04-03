@@ -109,6 +109,14 @@
             <i class="fa-brands fa-github fa-xl"></i>
             <q-tooltip>View on GitHub</q-tooltip>
           </q-btn>
+
+          <q-chip
+            color="primary"
+            text-color="white"
+            size="md"
+          >
+            LAS: {{ parseFloat(selectedTreebankScore).toFixed(3) }}
+          </q-chip>
         </q-card-section>
 
         <q-card-section class="q-pa-lg">
@@ -404,6 +412,12 @@ export default defineComponent({
     selectedParserName() {
       if (!this.selectedLanguage || !this.selectedTreebank) return "";
       return `${this.parserType}_${this.selectedLanguage}-${this.selectedTreebank}`;
+    },
+
+    selectedTreebankScore() {
+      if (!this.selectedTreebank) return 0;
+      const selected = this.availableTreebanks.find(tb => tb.value === this.selectedTreebank);
+      return selected?.score || 0;
     },
   },
   mounted() {

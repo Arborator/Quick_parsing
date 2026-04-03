@@ -45,9 +45,11 @@ export default defineComponent({
         mapComp.selectLanguageOnMap(languageName, parsingComp.availableLanguages);
       }
       
-      const matchingParser = parsingComp.allParsers.find((parser: string) =>
-        parser.toLowerCase().includes(languageName.toLowerCase())
-      );
+      const matchingParser = parsingComp.allParsers.find((parser: string) => {
+        const match = parser.match(/^[A-Z]+_(.+)-([^-]+)$/);
+        const language = match ? match[1] : "";
+        return language === languageName;
+      });
       
       if (matchingParser) {
         const match = matchingParser.match(/^[A-Z]+_(.+)-([^-]+)$/);
@@ -55,6 +57,13 @@ export default defineComponent({
         if (language) {
           parsingComp.selectedLanguage = language;
           parsingComp.selectedTreebank = '';
+          
+          this.$nextTick(() => {
+            const availableTreebanks = parsingComp.availableTreebanks;
+            if (availableTreebanks && availableTreebanks.length === 1) {
+              parsingComp.selectedTreebank = availableTreebanks[0].value;
+            }
+          });
         }
       } else {
         console.warn(`Aucun parser trouvé pour: ${languageName}`);
@@ -73,6 +82,13 @@ export default defineComponent({
       if (!languageExists) {
         parsingComp.selectedLanguage = '';
         parsingComp.selectedTreebank = '';
+      } else {
+        this.$nextTick(() => {
+          const availableTreebanks = parsingComp.availableTreebanks;
+          if (availableTreebanks && availableTreebanks.length === 1) {
+            parsingComp.selectedTreebank = availableTreebanks[0].value;
+          }
+        });
       }
     },
   },
