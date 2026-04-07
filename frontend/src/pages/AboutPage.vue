@@ -20,7 +20,7 @@
             <q-card-section>
               <h2 class="text-h6 text-primary q-mt-none q-mb-md">Introduction</h2>
               <p class="text-body1 q-my-sm">
-                <strong>QuickParser</strong> is a service for syntactic analysis that uses models pretrained on 
+                <strong>SUD Parse</strong> is a service for syntactic analysis that uses models pretrained on 
                 <a href="https://universaldependencies.org/" target="_blank">Universal Dependencies (UD)</a> and 
                 <a href="https://surfacesyntacticud.org/" target="_blank">Surface Universal Dependencies (SUD)</a> corpora.
               </p>
@@ -40,7 +40,7 @@
                 <li class="q-mb-sm text-body1">Parsing can be performed in the UD or SUD framework</li>
                 <li class="q-mb-sm text-body1">Token limit for plain text input is 50,000 tokens (provided the anticipated number of sentences does not exceed 5,000). For  CONLLU or text file input the parser can process up to 100,000 tokens (if the number of sentences is not greater than 5,000).</li>
                 <li class="q-mb-sm text-body1">
-                  QuickParser service uses 
+                  SUD Parse service uses 
                   <a href="https://github.com/kirianguiller/BertForDeprel" target="_blank">BertForDeprel</a> parser with 
                   <a href="https://huggingface.co/docs/transformers/model_doc/xlm-roberta" target="_blank">XLMRoBERTa</a> embeddings
                 </li>
@@ -105,7 +105,7 @@
 
           <div class="text-center q-mb-lg">
             <p class="text-body1 text-grey-7">
-              Detailed Help Page can be found <a href="https://arborator.github.io/arborator-documentation/#/">here</a>
+              Detailed Help Page can be found <a href="https://arborator.github.io/arborator-documentation/#/parserQuick">here</a>
             </p>
           </div>
         </div>

@@ -3,11 +3,11 @@
     <q-header class="bg-primary q-px-lg q-py-sm">
       <div class="row items-center q-gutter-lg" style="height: 70px">
         <q-btn flat :ripple="false" type="a">
-          <img
-            alt="parser logo"
-            src="/svg/parser.svg"
-            style="height: 45px; object-fit: contain"
-          />
+         <img
+         alt="parser logo"
+         src="/svg/parser.svg?v=1.2" 
+         style="height: 50px; width: auto; max-width: 100%; object-fit: contain;"
+/>
         </q-btn>
         <q-space />
 
