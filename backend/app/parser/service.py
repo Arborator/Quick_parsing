@@ -126,7 +126,23 @@ class TextToParseService:
                 conll_out += conllize_sentence(sentences[i], "sample", idx, option)
 
         return conll_out
-
+    
+    @staticmethod
+    def fix_empty_conllu_fields(conllu_content: str) -> str:
+        """
+        Remplit les champs vides avec '_'
+        """
+        processed_lines = []
+        for line in conllu_content.split("\n"):
+            if not line.startswith("#"):
+                rows = line.split("\t")
+                for i in range(2, len(rows)):
+                    if rows[i].strip() == "":
+                        rows[i] = "_"
+                line = "\t".join(rows)
+            processed_lines.append(line)
+        
+        return "\n".join(processed_lines)
 
 ###########################"tokenizer Kim's script" ###########################
 """We used the tokenizer of Kim https://github.com/kimgerdes/text2conll instead of the one in spacy"""

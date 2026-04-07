@@ -65,7 +65,12 @@ class ParserParseStartResource(Resource):
         if files: 
             for file in files:
                 file_name = file.filename.split(".conllu")[0]
-                files_to_parse[file_name] = file.read().decode()
+                file_content = file.read().decode()
+                
+                file_content = TextToParseService.fix_empty_conllu_fields(file_content)
+                
+                files_to_parse[file_name] = file_content
+  
        
         data = {
             "model_info": model["model_info"],
