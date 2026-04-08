@@ -105,7 +105,7 @@
 
           <div class="text-center q-mb-lg">
             <p class="text-body1 text-grey-7">
-              Detailed Help Page can be found <a href="https://arborator.github.io/arborator-documentation/#/parserQuick">here</a>
+              Detailed Help Page can be found <a href="https://arborator.github.io/arborator-documentation/#/SUD_Parse">here</a>
             </p>
           </div>
         </div>
